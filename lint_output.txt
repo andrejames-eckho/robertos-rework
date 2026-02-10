@@ -1,0 +1,23 @@
+
+> robertos-rework@0.1.0 lint
+> eslint
+
+
+/Users/outkastpanda/antigravity-projects/robertos-rework/src/app/admin/page.tsx
+   5:10  warning  'motion' is defined but never used           @typescript-eslint/no-unused-vars
+   5:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+   7:5   warning  'BarChart3' is defined but never used        @typescript-eslint/no-unused-vars
+  41:52  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  62:30  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/Users/outkastpanda/antigravity-projects/robertos-rework/src/app/auth/page.tsx
+  8:10  warning  'Input' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/outkastpanda/antigravity-projects/robertos-rework/src/app/dashboard/page.tsx
+  5:18  warning  'Filter' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/outkastpanda/antigravity-projects/robertos-rework/src/lib/inventory-context.tsx
+  3:54  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 8 problems (2 errors, 6 warnings)
+

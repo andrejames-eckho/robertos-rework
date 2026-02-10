@@ -1,0 +1,224 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Plus, Minus, AlertTriangle, LogOut, Package, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { useInventory } from "@/lib/inventory-context";
+import { InventoryItem } from "@/lib/mock-data";
+import { useRouter } from "next/navigation";
+
+export default function DashboardPage() {
+    const { items, adjustStock } = useInventory();
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState("All");
+    const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+    const [adjustmentType, setAdjustmentType] = useState<"+" | "-">("+");
+    const [adjustAmount, setAdjustAmount] = useState("");
+    const router = useRouter();
+
+    const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
+
+    const filteredItems = useMemo(() => {
+        return items.filter((item) => {
+            const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+            const matchesCategory = category === "All" || item.category === category;
+            return matchesSearch && matchesCategory;
+        });
+    }, [items, search, category]);
+
+    const handleAdjustClick = (item: InventoryItem, type: "+" | "-") => {
+        setSelectedItem(item);
+        setAdjustmentType(type);
+        setAdjustAmount("");
+    };
+
+    const handleConfirmAdjustment = () => {
+        if (!selectedItem || !adjustAmount) return;
+
+        const amount = parseInt(adjustAmount);
+        if (isNaN(amount) || amount <= 0) return;
+
+        adjustStock(selectedItem.id, adjustmentType === "+" ? amount : -amount, "handler_maria");
+
+        setSelectedItem(null);
+        setAdjustAmount("");
+    };
+
+    return (
+        <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 md:p-8 gap-6">
+            {/* Header */}
+            <header className="flex justify-between items-center glass rounded-3xl p-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                        <Package className="text-primary w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-glow">Inventory Dashboard</h1>
+                        <p className="text-sm text-muted-foreground">Logged in as: handler_maria</p>
+                    </div>
+                </div>
+                <div className="flex gap-4">
+                    <Button
+                        variant="ghost"
+                        className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={() => router.push("/admin")}
+                    >
+                        <ShieldCheck className="w-5 h-5 mr-2" /> Manager Panel
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        className="rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+                        onClick={() => router.push("/auth")}
+                    >
+                        <LogOut className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" /> Sign Out
+                    </Button>
+                </div>
+            </header>
+
+            {/* Controls */}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                        placeholder="Search parts, items, or labels..."
+                        className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                    {categories.map((cat) => (
+                        <Button
+                            key={cat}
+                            variant={category === cat ? "default" : "secondary"}
+                            className={`h-14 px-6 rounded-2xl transition-all ${category === cat ? "shadow-lg shadow-primary/20" : "bg-white/5 border-white/10"
+                                }`}
+                            onClick={() => setCategory(cat)}
+                        >
+                            {cat}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Inventory List */}
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <AnimatePresence mode="popLayout">
+                        {filteredItems.map((item) => {
+                            const IsLowStock = item.quantity < item.lowStockThreshold;
+                            return (
+                                <motion.div
+                                    key={item.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className={`glass-dark p-6 rounded-3xl flex flex-col gap-4 border transition-all duration-500 ${IsLowStock ? "border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)]" : "border-white/5"
+                                        }`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-glow">{item.name}</h3>
+                                            <p className="text-sm text-muted-foreground">{item.category}</p>
+                                        </div>
+                                        {IsLowStock && (
+                                            <Badge variant="destructive" className="animate-pulse rounded-lg px-2">
+                                                <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
+                                            </Badge>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-end justify-between">
+                                        <div>
+                                            <span className={`text-4xl font-black ${IsLowStock ? "text-destructive" : "text-primary"}`}>
+                                                {item.quantity}
+                                            </span>
+                                            <span className="text-muted-foreground ml-2 uppercase text-xs font-bold tracking-widest">
+                                                {item.unit}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-12 w-12 rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-90"
+                                                onClick={() => handleAdjustClick(item, "-")}
+                                            >
+                                                <Minus className="w-6 h-6" />
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-12 w-12 rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-90"
+                                                onClick={() => handleAdjustClick(item, "+")}
+                                            >
+                                                <Plus className="w-6 h-6" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            {/* Adjust stock popup */}
+            <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+                <DialogContent className="glass-dark border-white/10 rounded-[2rem] sm:max-w-md">
+                    <DialogHeader className="space-y-4">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                            <div className={`p-2 rounded-xl ${adjustmentType === '+' ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}`}>
+                                {adjustmentType === '+' ? <Plus /> : <Minus />}
+                            </div>
+                            Adjust Stock
+                        </DialogTitle>
+                        <DialogDescription className="text-lg text-foreground">
+                            {adjustmentType === '+' ? 'Adding' : 'Removing'} quantity for <b className="text-glow">{selectedItem?.name}</b>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-8">
+                        <Input
+                            type="number"
+                            placeholder="0"
+                            className="text-center text-4xl h-24 bg-white/5 border-white/10 rounded-2xl focus:ring-primary font-black"
+                            value={adjustAmount}
+                            onChange={(e) => setAdjustAmount(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+
+                    <DialogFooter className="sm:justify-between gap-4">
+                        <Button
+                            variant="ghost"
+                            className="h-14 px-8 rounded-2xl text-lg hover:bg-white/10"
+                            onClick={() => setSelectedItem(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            className={`h-14 px-8 rounded-2xl text-lg font-bold flex-1 ${adjustmentType === '+' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}
+                            onClick={handleConfirmAdjustment}
+                        >
+                            Confirm Adjustment
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
