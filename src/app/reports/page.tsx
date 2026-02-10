@@ -8,7 +8,8 @@ import {
     Calendar as CalendarIcon,
     TrendingDown,
     TrendingUp,
-    History
+    History,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,13 +20,13 @@ import {
     TableHead,
     TableHeader,
     TableRow
-} from "../../components/ui/table";
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 
 export default function ReportsPage() {
-    const { transactions } = useInventory();
+    const { transactions, isLoading } = useInventory();
     const router = useRouter();
 
     return (
@@ -62,7 +63,9 @@ export default function ReportsPage() {
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
                     <div>
                         <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Total Logs</p>
-                        <h3 className="text-3xl font-black mt-1">{transactions.length}</h3>
+                        <h3 className="text-3xl font-black mt-1">
+                            {isLoading ? "..." : transactions.length}
+                        </h3>
                     </div>
                     <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
                         <History className="text-primary w-6 h-6" />
@@ -72,7 +75,7 @@ export default function ReportsPage() {
                     <div>
                         <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Additions</p>
                         <h3 className="text-3xl font-black mt-1 text-primary">
-                            {transactions.filter(t => t.quantityChange > 0).length}
+                            {isLoading ? "..." : transactions.filter(t => t.quantity_change > 0).length}
                         </h3>
                     </div>
                     <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
@@ -83,7 +86,7 @@ export default function ReportsPage() {
                     <div>
                         <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Removals</p>
                         <h3 className="text-3xl font-black mt-1 text-destructive">
-                            {transactions.filter(t => t.quantityChange < 0).length}
+                            {isLoading ? "..." : transactions.filter(t => t.quantity_change < 0).length}
                         </h3>
                     </div>
                     <div className="w-12 h-12 bg-destructive/10 rounded-2xl flex items-center justify-center">
@@ -121,7 +124,15 @@ export default function ReportsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.length === 0 ? (
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-20">
+                                        <div className="flex items-center justify-center gap-2 text-primary animate-pulse font-bold">
+                                            <Loader2 className="animate-spin" /> LOADING REPORTS...
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : transactions.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-12 text-muted-foreground h-48">
                                         No transactions recorded yet.
@@ -133,18 +144,18 @@ export default function ReportsPage() {
                                         <TableCell className="text-xs font-mono opacity-70">
                                             {format(new Date(t.timestamp), "MMM dd, HH:mm:ss")}
                                         </TableCell>
-                                        <TableCell className="font-bold">{t.userId}</TableCell>
-                                        <TableCell>{t.itemName}</TableCell>
+                                        <TableCell className="font-bold">{t.user_id}</TableCell>
+                                        <TableCell>{t.item_name}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge
-                                                variant={t.quantityChange > 0 ? "default" : "destructive"}
-                                                className={`rounded-lg px-2 ${t.quantityChange > 0 ? "bg-primary/20 text-primary border-primary/20" : ""}`}
+                                                variant={t.quantity_change > 0 ? "default" : "destructive"}
+                                                className={`rounded-lg px-2 ${t.quantity_change > 0 ? "bg-primary/20 text-primary border-primary/20" : ""}`}
                                             >
-                                                {t.quantityChange > 0 ? "+" : ""}{t.quantityChange}
+                                                {t.quantity_change > 0 ? "+" : ""}{t.quantity_change}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right text-[10px] font-mono opacity-30">
-                                            #{t.id}
+                                            #{t.id.slice(0, 8)}
                                         </TableCell>
                                     </TableRow>
                                 ))

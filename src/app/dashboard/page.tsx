@@ -15,16 +15,17 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { useInventory } from "@/lib/inventory-context";
-import { InventoryItem } from "@/lib/mock-data";
 import { useRouter } from "next/navigation";
+import { InventoryItem } from "@/lib/db";
 
 export default function DashboardPage() {
-    const { items, adjustStock } = useInventory();
+    const { items, adjustStock, isLoading } = useInventory();
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
     const [adjustmentType, setAdjustmentType] = useState<"+" | "-">("+");
     const [adjustAmount, setAdjustAmount] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
     const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
@@ -43,16 +44,22 @@ export default function DashboardPage() {
         setAdjustAmount("");
     };
 
-    const handleConfirmAdjustment = () => {
-        if (!selectedItem || !adjustAmount) return;
+    const handleConfirmAdjustment = async () => {
+        if (!selectedItem || !adjustAmount || isSubmitting) return;
 
         const amount = parseInt(adjustAmount);
         if (isNaN(amount) || amount <= 0) return;
 
-        adjustStock(selectedItem.id, adjustmentType === "+" ? amount : -amount, "handler_maria");
-
-        setSelectedItem(null);
-        setAdjustAmount("");
+        setIsSubmitting(true);
+        try {
+            await adjustStock(selectedItem.id, adjustmentType === "+" ? amount : -amount, "handler_maria");
+            setSelectedItem(null);
+            setAdjustAmount("");
+        } catch (error) {
+            console.error("Adjustment failed:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -116,62 +123,73 @@ export default function DashboardPage() {
             <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item) => {
-                            const IsLowStock = item.quantity < item.lowStockThreshold;
-                            return (
-                                <motion.div
-                                    key={item.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className={`glass-dark p-6 rounded-3xl flex flex-col gap-4 border transition-all duration-500 ${IsLowStock ? "border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)]" : "border-white/5"
-                                        }`}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-glow">{item.name}</h3>
-                                            <p className="text-sm text-muted-foreground">{item.category}</p>
+                        {isLoading ? (
+                            <div className="col-span-full py-20 flex justify-center">
+                                <div className="text-primary animate-pulse text-lg font-bold tracking-tighter uppercase">Loading Inventory...</div>
+                            </div>
+                        ) : filteredItems.length === 0 ? (
+                            <div className="col-span-full py-20 flex flex-col items-center gap-4">
+                                <Package className="w-12 h-12 text-muted-foreground opacity-20" />
+                                <div className="text-muted-foreground text-lg italic">No items found matching your search.</div>
+                            </div>
+                        ) : (
+                            filteredItems.map((item) => {
+                                const IsLowStock = item.quantity < item.low_stock_threshold;
+                                return (
+                                    <motion.div
+                                        key={item.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className={`glass-dark p-6 rounded-3xl flex flex-col gap-4 border transition-all duration-500 ${IsLowStock ? "border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)]" : "border-white/5"
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                                <h3 className="text-xl font-bold text-glow leading-tight">{item.name}</h3>
+                                                <p className="text-sm text-muted-foreground mt-1">{item.category}</p>
+                                            </div>
+                                            {IsLowStock && (
+                                                <Badge variant="destructive" className="animate-pulse rounded-lg px-2 shrink-0">
+                                                    <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
+                                                </Badge>
+                                            )}
                                         </div>
-                                        {IsLowStock && (
-                                            <Badge variant="destructive" className="animate-pulse rounded-lg px-2">
-                                                <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
-                                            </Badge>
-                                        )}
-                                    </div>
 
-                                    <div className="flex items-end justify-between">
-                                        <div>
-                                            <span className={`text-4xl font-black ${IsLowStock ? "text-destructive" : "text-primary"}`}>
-                                                {item.quantity}
-                                            </span>
-                                            <span className="text-muted-foreground ml-2 uppercase text-xs font-bold tracking-widest">
-                                                {item.unit}
-                                            </span>
-                                        </div>
+                                        <div className="flex items-end justify-between mt-auto">
+                                            <div>
+                                                <span className={`text-5xl font-black ${IsLowStock ? "text-destructive" : "text-primary"}`}>
+                                                    {item.quantity}
+                                                </span>
+                                                <span className="text-muted-foreground ml-2 uppercase text-xs font-bold tracking-widest">
+                                                    {item.unit}
+                                                </span>
+                                            </div>
 
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                className="h-12 w-12 rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-90"
-                                                onClick={() => handleAdjustClick(item, "-")}
-                                            >
-                                                <Minus className="w-6 h-6" />
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                className="h-12 w-12 rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-90"
-                                                onClick={() => handleAdjustClick(item, "+")}
-                                            >
-                                                <Plus className="w-6 h-6" />
-                                            </Button>
+                                            <div className="flex gap-3">
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
+                                                    onClick={() => handleAdjustClick(item, "-")}
+                                                >
+                                                    <Minus className="w-8 h-8" />
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
+                                                    onClick={() => handleAdjustClick(item, "+")}
+                                                >
+                                                    <Plus className="w-8 h-8" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                                    </motion.div>
+                                );
+                            })
+                        )}
                     </AnimatePresence>
                 </div>
             </div>

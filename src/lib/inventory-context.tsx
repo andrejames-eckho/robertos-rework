@@ -1,65 +1,108 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
-import { InventoryItem, Transaction, MOCK_ITEMS } from "./mock-data";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { db, InventoryItem, Transaction } from "./db";
+import { useLiveQuery } from "dexie-react-hooks";
+import { MOCK_ITEMS } from "./mock-data";
 
 interface InventoryContextType {
     items: InventoryItem[];
     transactions: Transaction[];
-    addItem: (item: Omit<InventoryItem, "id">) => void;
-    updateItem: (id: string, updates: Partial<InventoryItem>) => void;
-    deleteItem: (id: string) => void;
-    adjustStock: (itemId: string, quantityChange: number, userId: string) => void;
+    isLoading: boolean;
+    addItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+    updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<void>;
+    deleteItem: (id: string) => Promise<void>;
+    adjustStock: (itemId: string, quantityChange: number, userId: string) => Promise<void>;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
-    const [items, setItems] = useState<InventoryItem[]>(MOCK_ITEMS);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    // useLiveQuery automatically updates the component when the database changes
+    const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+    const transactions = useLiveQuery(() => db.transactions.orderBy('timestamp').reverse().limit(100).toArray(), []) || [];
+    const [isLoading, setIsLoading] = useState(true);
 
-    const addItem = (newItem: Omit<InventoryItem, "id">) => {
+    useEffect(() => {
+        const initDb = async () => {
+            setIsLoading(true);
+            try {
+                // Seed database if empty
+                const count = await db.items.count();
+                if (count === 0) {
+                    console.log("Seeding database with mock data...");
+                    const now = new Date().toISOString();
+                    const seedItems: InventoryItem[] = MOCK_ITEMS.map(item => ({
+                        id: crypto.randomUUID(),
+                        name: item.name,
+                        category: item.category,
+                        quantity: item.quantity,
+                        low_stock_threshold: item.lowStockThreshold,
+                        unit: item.unit,
+                        created_at: now,
+                        updated_at: now
+                    }));
+                    await db.items.bulkAdd(seedItems);
+                }
+            } catch (error) {
+                console.error("Error initializing local database:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initDb();
+    }, []);
+
+    const addItem = async (newItem: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
+        const now = new Date().toISOString();
         const item: InventoryItem = {
             ...newItem,
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID(),
+            created_at: now,
+            updated_at: now
         };
-        setItems((prev) => [...prev, item]);
+        await db.items.add(item);
     };
 
-    const updateItem = (id: string, updates: Partial<InventoryItem>) => {
-        setItems((prev) =>
-            prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-        );
+    const updateItem = async (id: string, updates: Partial<InventoryItem>) => {
+        await db.items.update(id, {
+            ...updates,
+            updated_at: new Date().toISOString()
+        });
     };
 
-    const deleteItem = (id: string) => {
-        setItems((prev) => prev.filter((item) => item.id !== id));
+    const deleteItem = async (id: string) => {
+        await db.items.delete(id);
     };
 
-    const adjustStock = (itemId: string, quantityChange: number, userId: string) => {
-        const item = items.find((i) => i.id === itemId);
+    const adjustStock = async (itemId: string, quantityChange: number, userId: string) => {
+        const item = await db.items.get(itemId);
         if (!item) return;
 
-        setItems((prev) =>
-            prev.map((i) =>
-                i.id === itemId ? { ...i, quantity: i.quantity + quantityChange } : i
-            )
-        );
+        const newQuantity = item.quantity + quantityChange;
 
-        const newTransaction: Transaction = {
-            id: Math.random().toString(36).substr(2, 9),
-            itemId,
-            itemName: item.name,
-            userId,
-            quantityChange,
-            timestamp: new Date().toISOString(),
-        };
+        await db.transaction('rw', db.items, db.transactions, async () => {
+            // 1. Update the item quantity
+            await db.items.update(itemId, {
+                quantity: newQuantity,
+                updated_at: new Date().toISOString()
+            });
 
-        setTransactions((prev) => [newTransaction, ...prev]);
+            // 2. Log the transaction
+            await db.transactions.add({
+                id: crypto.randomUUID(),
+                item_id: itemId,
+                item_name: item.name,
+                user_id: userId,
+                quantity_change: quantityChange,
+                timestamp: new Date().toISOString()
+            });
+        });
     };
 
     return (
-        <InventoryContext.Provider value={{ items, transactions, addItem, updateItem, deleteItem, adjustStock }}>
+        <InventoryContext.Provider value={{ items, transactions, isLoading, addItem, updateItem, deleteItem, adjustStock }}>
             {children}
         </InventoryContext.Provider>
     );

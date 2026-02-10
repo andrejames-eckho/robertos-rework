@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useInventory } from "@/lib/inventory-context";
-import { InventoryItem } from "@/lib/mock-data";
+import { InventoryItem } from "@/lib/db";
 import {
     PackagePlus,
     Settings,
@@ -11,7 +11,8 @@ import {
     Plus,
     Edit2,
     Trash2,
-    History
+    History,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
     TableHead,
     TableHeader,
     TableRow
-} from "../../components/ui/table";
+} from "@/components/ui/table";
 import {
     Dialog,
     DialogContent,
@@ -34,28 +35,51 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 
+// Local insert type matching Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
+type ItemFormData = {
+    name: string;
+    category: string;
+    quantity: number;
+    low_stock_threshold: number;
+    unit: string;
+};
+
 export default function AdminPage() {
-    const { items, addItem, updateItem, deleteItem } = useInventory();
+    const { items, addItem, updateItem, deleteItem, isLoading } = useInventory();
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-    const [formData, setFormData] = useState<Omit<InventoryItem, "id">>({
+    const [formData, setFormData] = useState<ItemFormData>({
         name: "",
         category: "",
         quantity: 0,
-        lowStockThreshold: 10,
+        low_stock_threshold: 10,
         unit: "Units"
     });
     const router = useRouter();
 
-    const handleSave = () => {
-        if (editingItem) {
-            updateItem(editingItem.id, formData);
-        } else {
-            addItem(formData);
+    const handleSave = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            if (editingItem) {
+                await updateItem(editingItem.id, formData);
+            } else {
+                await addItem(formData);
+            }
+            setIsAddOpen(false);
+            setEditingItem(null);
+            setFormData({ name: "", category: "", quantity: 0, low_stock_threshold: 10, unit: "Units" });
+        } catch (error) {
+            console.error("Save failed:", error);
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsAddOpen(false);
-        setEditingItem(null);
-        setFormData({ name: "", category: "", quantity: 0, lowStockThreshold: 10, unit: "Units" });
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this item?")) return;
+        await deleteItem(id);
     };
 
     const startEdit = (item: InventoryItem) => {
@@ -64,7 +88,7 @@ export default function AdminPage() {
             name: item.name,
             category: item.category,
             quantity: item.quantity,
-            lowStockThreshold: item.lowStockThreshold,
+            low_stock_threshold: item.low_stock_threshold,
             unit: item.unit
         });
         setIsAddOpen(true);
@@ -98,7 +122,11 @@ export default function AdminPage() {
                     </Button>
                     <Button
                         className="rounded-xl bg-primary hover:bg-primary/80"
-                        onClick={() => setIsAddOpen(true)}
+                        onClick={() => {
+                            setEditingItem(null);
+                            setFormData({ name: "", category: "", quantity: 0, low_stock_threshold: 10, unit: "Units" });
+                            setIsAddOpen(true);
+                        }}
                     >
                         <Plus className="w-5 h-5 mr-2" /> Add New Item
                     </Button>
@@ -139,40 +167,56 @@ export default function AdminPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {items.map((item) => (
-                                    <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="border-white/10">{item.category}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-center font-bold">
-                                            <span className={item.quantity < item.lowStockThreshold ? "text-destructive" : "text-primary"}>
-                                                {item.quantity}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-center text-muted-foreground">{item.lowStockThreshold}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-lg hover:bg-primary/20 hover:text-primary"
-                                                    onClick={() => startEdit(item)}
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-lg hover:bg-destructive/20 hover:text-destructive"
-                                                    onClick={() => deleteItem(item.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-20">
+                                            <div className="flex items-center justify-center gap-2 text-primary animate-pulse font-bold">
+                                                <Loader2 className="animate-spin" /> LOADING INVENTORY...
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : items.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                            No items found. Add one to get started.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    items.map((item) => (
+                                        <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
+                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="border-white/10">{item.category}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center font-bold">
+                                                <span className={item.quantity < item.low_stock_threshold ? "text-destructive" : "text-primary"}>
+                                                    {item.quantity}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-center text-muted-foreground">{item.low_stock_threshold}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 rounded-lg hover:bg-primary/20 hover:text-primary"
+                                                        onClick={() => startEdit(item)}
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 rounded-lg hover:bg-destructive/20 hover:text-destructive"
+                                                        onClick={() => handleDelete(item.id)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </div>
@@ -197,7 +241,7 @@ export default function AdminPage() {
                             <label className="text-right text-sm font-bold opacity-70">Name</label>
                             <Input
                                 className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.name}
+                                value={formData.name || ""}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
@@ -205,7 +249,7 @@ export default function AdminPage() {
                             <label className="text-right text-sm font-bold opacity-70">Category</label>
                             <Input
                                 className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.category}
+                                value={formData.category || ""}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                             />
                         </div>
@@ -223,16 +267,24 @@ export default function AdminPage() {
                             <Input
                                 type="number"
                                 className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.lowStockThreshold}
-                                onChange={(e) => setFormData({ ...formData, lowStockThreshold: parseInt(e.target.value) || 0 })}
+                                value={formData.low_stock_threshold}
+                                onChange={(e) => setFormData({ ...formData, low_stock_threshold: parseInt(e.target.value) || 0 })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <label className="text-right text-sm font-bold opacity-70">Unit</label>
+                            <Input
+                                className="col-span-3 bg-white/5 border-white/10"
+                                value={formData.unit || ""}
+                                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                             />
                         </div>
                     </div>
 
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/80">
-                            {editingItem ? "Update Item" : "Create Item"}
+                        <Button variant="ghost" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/80 min-w-24" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : (editingItem ? "Update Item" : "Create Item")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
