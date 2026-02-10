@@ -31,25 +31,25 @@
 }
 
 :root {
-  --background: oklch(0.05 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.1 0 0 / 0.5);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.1 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.6 0.2 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.3 0 0 / 0.3);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.5 0.2 30);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.6 0.2 250 / 0.5);
+  --background: hsl(0 0% 4%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 8% / 0.5);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 8%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(217 91% 60%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 15%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 64%);
+  --accent: hsl(0 0% 25% / 0.3);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 100% / 0.1);
+  --input: hsl(0 0% 100% / 0.1);
+  --ring: hsl(217 91% 60% / 0.5);
   --radius: 1rem;
 }
 
@@ -57,11 +57,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground selection:bg-primary/30;
-    background-image: 
-      radial-gradient(at 0% 0%, oklch(0.15 0.05 250 / 0.15) 0, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.15 0.05 300 / 0.15) 0, transparent 50%);
+    background-image:
+      radial-gradient(at 0% 0%, hsl(240 100% 15% / 0.15) 0, transparent 50%),
+      radial-gradient(at 100% 100%, hsl(300 100% 15% / 0.15) 0, transparent 50%);
     background-attachment: fixed;
   }
 }
@@ -70,18 +71,28 @@
   .glass {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
   }
+
   .glass-dark {
     @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
   }
+
   .text-glow {
     text-shadow: 0 0 20px currentColor;
   }
+
   .animate-pulse-slow {
     animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
