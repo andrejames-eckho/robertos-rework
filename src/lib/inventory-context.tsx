@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { db, InventoryItem, Transaction } from "./db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { MOCK_ITEMS } from "./mock-data";
 
 interface InventoryContextType {
     items: InventoryItem[];
@@ -27,23 +26,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         const initDb = async () => {
             setIsLoading(true);
             try {
-                // Seed database if empty
-                const count = await db.items.count();
-                if (count === 0) {
-                    console.log("Seeding database with mock data...");
-                    const now = new Date().toISOString();
-                    const seedItems: InventoryItem[] = MOCK_ITEMS.map(item => ({
-                        id: crypto.randomUUID(),
-                        name: item.name,
-                        category: item.category,
-                        quantity: item.quantity,
-                        low_stock_threshold: item.lowStockThreshold,
-                        unit: item.unit,
-                        created_at: now,
-                        updated_at: now
-                    }));
-                    await db.items.bulkAdd(seedItems);
-                }
             } catch (error) {
                 console.error("Error initializing local database:", error);
             } finally {

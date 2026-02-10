@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Delete, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUser } from "@/lib/user-context";
 
 export default function AuthPage() {
     const [pin, setPin] = useState("");
     const [error, setError] = useState(false);
     const router = useRouter();
+    const { login } = useUser();
 
     const handleNumberClick = (num: string) => {
-        if (pin.length < 4) {
+        if (pin.length < 6) {
             setPin((prev) => prev + num);
             setError(false);
         }
@@ -23,8 +25,9 @@ export default function AuthPage() {
         setError(false);
     };
 
-    const handleSubmit = () => {
-        if (pin === "1234") { // Mock PIN for MVP
+    const handleSubmit = async () => {
+        const success = await login(pin);
+        if (success) {
             router.push("/dashboard");
         } else {
             setError(true);
@@ -50,7 +53,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="flex gap-4 justify-center">
-                    {[0, 1, 2, 3].map((i) => (
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
                         <div
                             key={i}
                             className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${pin.length > i
@@ -86,11 +89,11 @@ export default function AuthPage() {
                 </div>
 
                 <Button
-                    className={`w-full h-14 rounded-2xl text-lg font-bold transition-all ${pin.length === 4
+                    className={`w-full h-14 rounded-2xl text-lg font-bold transition-all ${pin.length >= 4
                         ? "bg-primary hover:bg-primary/80"
                         : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
                         }`}
-                    disabled={pin.length !== 4}
+                    disabled={pin.length < 4}
                     onClick={handleSubmit}
                 >
                     Unlock <ArrowRight className="ml-2 w-5 h-5" />

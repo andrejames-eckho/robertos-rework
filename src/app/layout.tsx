@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 };
 
 import { InventoryProvider } from "@/lib/inventory-context";
+import { UserProvider } from "@/lib/user-context";
+import { SettingsProvider } from "@/lib/settings-context";
 import { PageWrapper } from "@/components/page-wrapper";
 
 export default function RootLayout({
@@ -31,9 +33,13 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-hidden selection:bg-primary/30`}
       >
-        <InventoryProvider>
-          <PageWrapper>{children}</PageWrapper>
-        </InventoryProvider>
+        <UserProvider>
+          <SettingsProvider>
+            <InventoryProvider>
+              <PageWrapper>{children}</PageWrapper>
+            </InventoryProvider>
+          </SettingsProvider>
+        </UserProvider>
       </body>
     </html>
   );

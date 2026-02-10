@@ -17,9 +17,11 @@ import {
 import { useInventory } from "@/lib/inventory-context";
 import { useRouter } from "next/navigation";
 import { InventoryItem } from "@/lib/db";
+import { useUser } from "@/lib/user-context";
 
 export default function DashboardPage() {
     const { items, adjustStock, isLoading } = useInventory();
+    const { currentUser, logout } = useUser();
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -45,14 +47,14 @@ export default function DashboardPage() {
     };
 
     const handleConfirmAdjustment = async () => {
-        if (!selectedItem || !adjustAmount || isSubmitting) return;
+        if (!selectedItem || !adjustAmount || isSubmitting || !currentUser) return;
 
         const amount = parseInt(adjustAmount);
         if (isNaN(amount) || amount <= 0) return;
 
         setIsSubmitting(true);
         try {
-            await adjustStock(selectedItem.id, adjustmentType === "+" ? amount : -amount, "handler_maria");
+            await adjustStock(selectedItem.id, adjustmentType === "+" ? amount : -amount, currentUser.id);
             setSelectedItem(null);
             setAdjustAmount("");
         } catch (error) {
@@ -60,6 +62,11 @@ export default function DashboardPage() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleSignOut = () => {
+        logout();
+        router.push("/auth");
     };
 
     return (
@@ -72,7 +79,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-glow">Inventory Dashboard</h1>
-                        <p className="text-sm text-muted-foreground">Logged in as: handler_maria</p>
+                        <p className="text-sm text-muted-foreground">Logged in as: <span className="text-primary font-bold">{currentUser?.name || "Loading..."}</span></p>
                     </div>
                 </div>
                 <div className="flex gap-4">
@@ -86,7 +93,7 @@ export default function DashboardPage() {
                     <Button
                         variant="ghost"
                         className="rounded-xl hover:bg-destructive/10 hover:text-destructive group"
-                        onClick={() => router.push("/auth")}
+                        onClick={handleSignOut}
                     >
                         <LogOut className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" /> Sign Out
                     </Button>
