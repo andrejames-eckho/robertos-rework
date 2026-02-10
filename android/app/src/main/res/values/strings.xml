@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Robertos Rework</string>
+    <string name="title_activity_main">Robertos Rework</string>
+    <string name="package_name">com.robertosrework.app</string>
+    <string name="custom_url_scheme">com.robertosrework.app</string>
+</resources>
