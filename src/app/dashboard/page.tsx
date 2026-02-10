@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Minus, AlertTriangle, LogOut, Package, ShieldCheck } from "lucide-react";
+import { Search, Plus, Minus, AlertTriangle, LogOut, Package, ShieldCheck, History as HistoryIcon } from "lucide-react";
+import { TransactionReports } from "@/components/dashboard/TransactionReports";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ export default function DashboardPage() {
     const [adjustmentType, setAdjustmentType] = useState<"+" | "-">("+");
     const [adjustAmount, setAdjustAmount] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState<"inventory" | "reports">("inventory");
     const router = useRouter();
 
     const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
@@ -83,6 +85,23 @@ export default function DashboardPage() {
                     </div>
                 </div>
                 <div className="flex gap-4">
+                    <div className="bg-white/5 p-1 rounded-xl flex gap-1 mr-4 border border-white/5">
+                        <Button
+                            variant={activeTab === "inventory" ? "secondary" : "ghost"}
+                            className={`rounded-lg transition-all ${activeTab === "inventory" ? "bg-primary/20 text-primary shadow-sm" : "hover:text-primary"}`}
+                            onClick={() => setActiveTab("inventory")}
+                        >
+                            <Package className="w-4 h-4 mr-2" /> Inventory
+                        </Button>
+                        <Button
+                            variant={activeTab === "reports" ? "secondary" : "ghost"}
+                            className={`rounded-lg transition-all ${activeTab === "reports" ? "bg-primary/20 text-primary shadow-sm" : "hover:text-primary"}`}
+                            onClick={() => setActiveTab("reports")}
+                        >
+                            <HistoryIcon className="w-4 h-4 mr-2" /> Reports
+                        </Button>
+                    </div>
+
                     <Button
                         variant="ghost"
                         className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
@@ -100,106 +119,112 @@ export default function DashboardPage() {
                 </div>
             </header>
 
-            {/* Controls */}
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <Input
-                        placeholder="Search parts, items, or labels..."
-                        className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                    {categories.map((cat) => (
-                        <Button
-                            key={cat}
-                            variant={category === cat ? "default" : "secondary"}
-                            className={`h-14 px-6 rounded-2xl transition-all ${category === cat ? "shadow-lg shadow-primary/20" : "bg-white/5 border-white/10"
-                                }`}
-                            onClick={() => setCategory(cat)}
-                        >
-                            {cat}
-                        </Button>
-                    ))}
-                </div>
-            </div>
+            {activeTab === "inventory" ? (
+                <>
+                    {/* Controls */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Input
+                                placeholder="Search parts, items, or labels..."
+                                className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                            {categories.map((cat) => (
+                                <Button
+                                    key={cat}
+                                    variant={category === cat ? "default" : "secondary"}
+                                    className={`h-14 px-6 rounded-2xl transition-all ${category === cat ? "shadow-lg shadow-primary/20" : "bg-white/5 border-white/10"
+                                        }`}
+                                    onClick={() => setCategory(cat)}
+                                >
+                                    {cat}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
 
-            {/* Inventory List */}
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <AnimatePresence mode="popLayout">
-                        {isLoading ? (
-                            <div className="col-span-full py-20 flex justify-center">
-                                <div className="text-primary animate-pulse text-lg font-bold tracking-tighter uppercase">Loading Inventory...</div>
-                            </div>
-                        ) : filteredItems.length === 0 ? (
-                            <div className="col-span-full py-20 flex flex-col items-center gap-4">
-                                <Package className="w-12 h-12 text-muted-foreground opacity-20" />
-                                <div className="text-muted-foreground text-lg italic">No items found matching your search.</div>
-                            </div>
-                        ) : (
-                            filteredItems.map((item) => {
-                                const IsLowStock = item.quantity < item.low_stock_threshold;
-                                return (
-                                    <motion.div
-                                        key={item.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className={`glass-dark p-6 rounded-3xl flex flex-col gap-4 border transition-all duration-500 ${IsLowStock ? "border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)]" : "border-white/5"
-                                            }`}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="text-xl font-bold text-glow leading-tight">{item.name}</h3>
-                                                <p className="text-sm text-muted-foreground mt-1">{item.category}</p>
-                                            </div>
-                                            {IsLowStock && (
-                                                <Badge variant="destructive" className="animate-pulse rounded-lg px-2 shrink-0">
-                                                    <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
-                                                </Badge>
-                                            )}
-                                        </div>
+                    {/* Inventory List */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <AnimatePresence mode="popLayout">
+                                {isLoading ? (
+                                    <div className="col-span-full py-20 flex justify-center">
+                                        <div className="text-primary animate-pulse text-lg font-bold tracking-tighter uppercase">Loading Inventory...</div>
+                                    </div>
+                                ) : filteredItems.length === 0 ? (
+                                    <div className="col-span-full py-20 flex flex-col items-center gap-4">
+                                        <Package className="w-12 h-12 text-muted-foreground opacity-20" />
+                                        <div className="text-muted-foreground text-lg italic">No items found matching your search.</div>
+                                    </div>
+                                ) : (
+                                    filteredItems.map((item) => {
+                                        const IsLowStock = item.quantity < item.low_stock_threshold;
+                                        return (
+                                            <motion.div
+                                                key={item.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                className={`glass-dark p-6 rounded-3xl flex flex-col gap-4 border transition-all duration-500 ${IsLowStock ? "border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)]" : "border-white/5"
+                                                    }`}
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <h3 className="text-xl font-bold text-glow leading-tight">{item.name}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-1">{item.category}</p>
+                                                    </div>
+                                                    {IsLowStock && (
+                                                        <Badge variant="destructive" className="animate-pulse rounded-lg px-2 shrink-0">
+                                                            <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
+                                                        </Badge>
+                                                    )}
+                                                </div>
 
-                                        <div className="flex items-end justify-between mt-auto">
-                                            <div>
-                                                <span className={`text-5xl font-black ${IsLowStock ? "text-destructive" : "text-primary"}`}>
-                                                    {item.quantity}
-                                                </span>
-                                                <span className="text-muted-foreground ml-2 uppercase text-xs font-bold tracking-widest">
-                                                    {item.unit}
-                                                </span>
-                                            </div>
+                                                <div className="flex items-end justify-between mt-auto">
+                                                    <div>
+                                                        <span className={`text-5xl font-black ${IsLowStock ? "text-destructive" : "text-primary"}`}>
+                                                            {item.quantity}
+                                                        </span>
+                                                        <span className="text-muted-foreground ml-2 uppercase text-xs font-bold tracking-widest">
+                                                            {item.unit}
+                                                        </span>
+                                                    </div>
 
-                                            <div className="flex gap-3">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="icon"
-                                                    className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
-                                                    onClick={() => handleAdjustClick(item, "-")}
-                                                >
-                                                    <Minus className="w-8 h-8" />
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="icon"
-                                                    className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
-                                                    onClick={() => handleAdjustClick(item, "+")}
-                                                >
-                                                    <Plus className="w-8 h-8" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
+                                                    <div className="flex gap-3">
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="icon"
+                                                            className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
+                                                            onClick={() => handleAdjustClick(item, "-")}
+                                                        >
+                                                            <Minus className="w-8 h-8" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="icon"
+                                                            className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
+                                                            onClick={() => handleAdjustClick(item, "+")}
+                                                        >
+                                                            <Plus className="w-8 h-8" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <TransactionReports />
+            )}
 
             {/* Adjust stock popup */}
             <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>

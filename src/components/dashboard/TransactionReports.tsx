@@ -1,8 +1,8 @@
 "use client";
 
 import { useInventory } from "@/lib/inventory-context";
+import { useUser } from "@/lib/user-context";
 import {
-    ArrowLeft,
     Download,
     Search,
     Calendar as CalendarIcon,
@@ -22,44 +22,16 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 
-export default function ReportsPage() {
+export function TransactionReports() {
     const { transactions, isLoading } = useInventory();
-    const router = useRouter();
+    const { users } = useUser();
 
     return (
-        <div className="flex flex-col h-screen max-w-7xl mx-auto p-4 md:p-8 gap-6 max-h-screen overflow-hidden">
-            {/* Header */}
-            <header className="flex justify-between items-center glass rounded-3xl p-6">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-xl hover:bg-white/10"
-                        onClick={() => router.push("/admin")}
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-glow">Transaction Reports</h1>
-                        <p className="text-sm text-muted-foreground">Detailed history of stock movements</p>
-                    </div>
-                </div>
-                <div className="flex gap-4">
-                    <Button
-                        variant="secondary"
-                        className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary opacity-50 cursor-not-allowed"
-                        disabled
-                    >
-                        <Download className="w-5 h-5 mr-2" /> Export CSV
-                    </Button>
-                </div>
-            </header>
-
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-col gap-6 h-full overflow-hidden">
+            {/* Header / Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
                     <div>
                         <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Total Logs</p>
@@ -96,7 +68,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Table Section */}
-            <main className="flex-1 glass-dark rounded-3xl p-6 flex flex-col gap-4 overflow-hidden">
+            <div className="flex-1 glass-dark rounded-3xl p-6 flex flex-col gap-4 overflow-hidden">
                 <div className="flex justify-between items-center">
                     <div className="relative group w-full max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -108,6 +80,13 @@ export default function ReportsPage() {
                     <div className="flex gap-2">
                         <Button variant="ghost" className="rounded-xl border border-white/5 bg-white/5">
                             <CalendarIcon className="w-4 h-4 mr-2" /> Today
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary opacity-50 cursor-not-allowed"
+                            disabled
+                        >
+                            <Download className="w-4 h-4 mr-2" /> Export
                         </Button>
                     </div>
                 </div>
@@ -144,7 +123,9 @@ export default function ReportsPage() {
                                         <TableCell className="text-xs font-mono opacity-70">
                                             {format(new Date(t.timestamp), "MMM dd, HH:mm:ss")}
                                         </TableCell>
-                                        <TableCell className="font-bold">{t.user_id}</TableCell>
+                                        <TableCell className="font-bold">
+                                            {users.find(u => u.id === t.user_id)?.name || t.user_id}
+                                        </TableCell>
                                         <TableCell>{t.item_name}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge
@@ -163,7 +144,7 @@ export default function ReportsPage() {
                         </TableBody>
                     </Table>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

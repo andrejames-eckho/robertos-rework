@@ -7,9 +7,9 @@ import {
     Plus,
     Edit2,
     Trash2,
-    History,
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    Tags
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,13 @@ import {
     TableRow
 } from "@/components/ui/table";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -30,7 +37,6 @@ import {
     DialogDescription
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
 
 // Local insert type matching Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>
 type ItemFormData = {
@@ -42,8 +48,10 @@ type ItemFormData = {
 };
 
 export function InventoryView() {
-    const { items, addItem, updateItem, deleteItem, isLoading } = useInventory();
+    const { items, categories, addItem, addCategory, deleteCategory, updateItem, deleteItem, isLoading } = useInventory();
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
     const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
@@ -54,7 +62,6 @@ export function InventoryView() {
         low_stock_threshold: 10,
         unit: "Units"
     });
-    const router = useRouter();
 
     const handleSave = async () => {
         if (isSubmitting) return;
@@ -105,6 +112,31 @@ export function InventoryView() {
         setIsAddOpen(true);
     };
 
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await addCategory(newCategoryName.trim());
+            setNewCategoryName("");
+        } catch (error) {
+            console.error("Failed to add category:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteCategory = async (id: string) => {
+        if (!confirm("Delete this category?")) return;
+        setIsSubmitting(true);
+        try {
+            await deleteCategory(id);
+        } catch (error) {
+            console.error("Failed to delete category:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4 h-full overflow-hidden">
             <div className="flex justify-between items-center">
@@ -113,9 +145,9 @@ export function InventoryView() {
                     <Button
                         variant="secondary"
                         className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary"
-                        onClick={() => router.push("/reports")}
+                        onClick={() => setIsCategoryManagerOpen(true)}
                     >
-                        <History className="w-5 h-5 mr-2" /> View Reports
+                        <Tags className="w-5 h-5 mr-2" /> Manage Categories
                     </Button>
                     <Button
                         className="rounded-xl bg-primary hover:bg-primary/80"
@@ -136,6 +168,7 @@ export function InventoryView() {
                         <TableRow className="border-white/5 hover:bg-transparent">
                             <TableHead className="text-muted-foreground font-bold">Item Name</TableHead>
                             <TableHead className="text-muted-foreground font-bold">Category</TableHead>
+                            <TableHead className="text-muted-foreground font-bold text-center">Unit</TableHead>
                             <TableHead className="text-muted-foreground font-bold text-center">Stock</TableHead>
                             <TableHead className="text-muted-foreground font-bold text-center">Threshold</TableHead>
                             <TableHead className="text-muted-foreground font-bold text-right">Actions</TableHead>
@@ -144,7 +177,7 @@ export function InventoryView() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-20">
+                                <TableCell colSpan={6} className="text-center py-20">
                                     <div className="flex items-center justify-center gap-2 text-primary animate-pulse font-bold">
                                         <Loader2 className="animate-spin" /> LOADING INVENTORY...
                                     </div>
@@ -152,7 +185,7 @@ export function InventoryView() {
                             </TableRow>
                         ) : items.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
                                     No items found. Add one to get started.
                                 </TableCell>
                             </TableRow>
@@ -162,6 +195,9 @@ export function InventoryView() {
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="border-white/10">{item.category}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-center text-muted-foreground text-sm uppercase font-bold tracking-wider">
+                                        {item.unit}
                                     </TableCell>
                                     <TableCell className="text-center font-bold">
                                         <span className={item.quantity < item.low_stock_threshold ? "text-destructive" : "text-primary"}>
@@ -220,11 +256,21 @@ export function InventoryView() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <label className="text-right text-sm font-bold opacity-70">Category</label>
-                            <Input
-                                className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.category || ""}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            />
+                            <div className="col-span-3">
+                                <Select
+                                    value={formData.category}
+                                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                                >
+                                    <SelectTrigger className="bg-white/5 border-white/10 w-full">
+                                        <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <label className="text-right text-sm font-bold opacity-70">Stock</label>
@@ -298,6 +344,52 @@ export function InventoryView() {
                             {isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : "Delete Item"}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Category Manager Dialog */}
+            <Dialog open={isCategoryManagerOpen} onOpenChange={setIsCategoryManagerOpen}>
+                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold">Manage Categories</DialogTitle>
+                        <DialogDescription>
+                            Add or remove categories for inventory items.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="New category name..."
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                className="bg-white/5 border-white/10"
+                            />
+                            <Button onClick={handleAddCategory} disabled={!newCategoryName.trim() || isSubmitting}>
+                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Plus className="w-4 h-4" />}
+                            </Button>
+                        </div>
+
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            {categories.length === 0 ? (
+                                <p className="text-center text-muted-foreground italic py-4">No categories yet.</p>
+                            ) : (
+                                categories.map((cat) => (
+                                    <div key={cat.id} className="flex justify-between items-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                        <span className="font-medium">{cat.name}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/20"
+                                            onClick={() => handleDeleteCategory(cat.id)}
+                                            disabled={isSubmitting}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
