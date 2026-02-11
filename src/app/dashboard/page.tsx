@@ -151,7 +151,7 @@ export default function DashboardPage() {
                             />
                         </div>
                         <Select value={category} onValueChange={setCategory}>
-                            <SelectTrigger className="w-full md:w-[240px] !h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all">
+                            <SelectTrigger className="w-full md:w-[240px] h-14! bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all">
                                 <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent className="glass-dark border-white/10 rounded-xl">
@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
             {/* Adjust stock popup */}
             <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-                <DialogContent className="glass-dark border-white/10 rounded-[2rem] sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-[2xl] sm:max-w-md">
                     <DialogHeader className="space-y-4">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${adjustmentType === '+' ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}`}>
