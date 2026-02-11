@@ -7,6 +7,7 @@ import { TransactionReports } from "@/components/dashboard/TransactionReports";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
 import {
     Select,
     SelectContent,
@@ -83,8 +84,14 @@ export default function DashboardPage() {
             {/* Header */}
             <header className="flex justify-between items-center glass rounded-3xl p-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-2xl">
-                        📦
+                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                        <Icon size={24} color="hsl(var(--primary))">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </Icon>
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-glow">Roberto's Inventory</h1>

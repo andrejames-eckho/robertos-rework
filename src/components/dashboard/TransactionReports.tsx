@@ -6,13 +6,11 @@ import {
     Download,
     Search,
     Calendar as CalendarIcon,
-    TrendingDown,
-    TrendingUp,
-    History,
     Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Icon } from "@/components/ui/icon";
 import {
     Table,
     TableBody,
@@ -40,7 +38,12 @@ export function TransactionReports() {
                         </h3>
                     </div>
                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <History className="w-6 h-6 text-primary" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
+                        <Icon size={24} color="hsl(var(--primary))">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                        </Icon>
                     </div>
                 </div>
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
@@ -51,7 +54,12 @@ export function TransactionReports() {
                         </h3>
                     </div>
                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-primary" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
+                        <Icon size={24} color="hsl(var(--primary))">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                <polyline points="17 6 23 6 23 12"/>
+                            </svg>
+                        </Icon>
                     </div>
                 </div>
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
@@ -62,7 +70,12 @@ export function TransactionReports() {
                         </h3>
                     </div>
                     <div className="w-12 h-12 bg-destructive/20 rounded-2xl flex items-center justify-center">
-                        <TrendingDown className="w-6 h-6 text-destructive" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
+                        <Icon size={24} color="hsl(var(--destructive))">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+                                <polyline points="17 18 23 18 23 12"/>
+                            </svg>
+                        </Icon>
                     </div>
                 </div>
             </div>
