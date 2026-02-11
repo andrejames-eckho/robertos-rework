@@ -34,7 +34,7 @@ export default function AdminPage() {
                         className="rounded-xl hover:bg-white/10"
                         onClick={() => router.push("/dashboard")}
                     >
-                        <ArrowLeft className="w-6 h-6" />
+                        <ArrowLeft className="w-6 h-6" size={24} strokeWidth={2} absoluteStrokeWidth />
                     </Button>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-glow">Admin Panel</h1>
@@ -56,29 +56,29 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1 overflow-hidden">
                 {/* Sidebar Nav */}
                 <aside className="glass-dark rounded-3xl p-4 flex flex-col gap-2 h-fit">
-                    <Button
-                        variant="ghost"
-                        className={`justify-start h-12 rounded-xl transition-all ${activeView === "INVENTORY" ? "bg-primary/20 text-primary" : "hover:bg-white/5"}`}
+                    <button
+                        className={`w-full justify-start h-12 rounded-xl transition-all flex items-center px-4 gap-3 ${activeView === "INVENTORY" ? "bg-primary text-white" : "text-white/70 hover:text-white hover:bg-white/5"}`}
                         onClick={() => setActiveView("INVENTORY")}
                     >
-                        <PackagePlus className="w-5 h-5 mr-3" /> Inventory Management
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        className={`justify-start h-12 rounded-xl transition-all ${activeView === "USERS" ? "bg-primary/20 text-primary" : "hover:bg-white/5"} ${!isSuperAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                        onClick={() => isSuperAdmin && setActiveView("USERS")}
+                        <PackagePlus className="w-5 h-5" size={20} strokeWidth={2} absoluteStrokeWidth />
+                        <span className="font-medium">Inventory Management</span>
+                    </button>
+                    <button
+                        className={`w-full justify-start h-12 rounded-xl transition-all flex items-center px-4 gap-3 ${activeView === "USERS" ? "bg-primary text-white" : "text-white/70 hover:text-white hover:bg-white/5"} ${!isSuperAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => setActiveView("USERS")}
                         disabled={!isSuperAdmin}
                     >
-                        <Users className="w-5 h-5 mr-3" /> User Management
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        className={`justify-start h-12 rounded-xl transition-all ${activeView === "SETTINGS" ? "bg-primary/20 text-primary" : "hover:bg-white/5"} ${!isSuperAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                        onClick={() => isSuperAdmin && setActiveView("SETTINGS")}
+                        <Users className="w-5 h-5" size={20} strokeWidth={2} absoluteStrokeWidth />
+                        <span className="font-medium">User Management</span>
+                    </button>
+                    <button
+                        className={`w-full justify-start h-12 rounded-xl transition-all flex items-center px-4 gap-3 ${activeView === "SETTINGS" ? "bg-primary text-white" : "text-white/70 hover:text-white hover:bg-white/5"} ${!isSuperAdmin ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={() => setActiveView("SETTINGS")}
                         disabled={!isSuperAdmin}
                     >
-                        <Settings className="w-5 h-5 mr-3" /> App Settings
-                    </Button>
+                        <Settings className="w-5 h-5" size={20} strokeWidth={2} absoluteStrokeWidth />
+                        <span className="font-medium">App Settings</span>
+                    </button>
                 </aside>
 
                 {/* Main View Area */}

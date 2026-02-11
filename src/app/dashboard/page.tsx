@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -77,7 +84,7 @@ export default function DashboardPage() {
             <header className="flex justify-between items-center glass rounded-3xl p-6">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <Package className="text-primary w-6 h-6" />
+                        <Package className="text-primary w-6 h-6" size={24} strokeWidth={2} absoluteStrokeWidth />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-glow">Inventory Dashboard</h1>
@@ -86,35 +93,39 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex gap-4">
                     <div className="bg-white/5 p-1 rounded-xl flex gap-1 mr-4 border border-white/5">
-                        <Button
-                            variant={activeTab === "inventory" ? "secondary" : "ghost"}
-                            className={`rounded-lg transition-all ${activeTab === "inventory" ? "bg-primary/20 text-primary shadow-sm" : "hover:text-primary"}`}
+                        <button
+                            className={`px-4 py-2 rounded-lg transition-all flex items-center justify-center min-w-[120px] ${activeTab === "inventory" ? "bg-primary text-white" : "text-white/70 hover:text-white"}`}
                             onClick={() => setActiveTab("inventory")}
                         >
-                            <Package className="w-4 h-4 mr-2" /> Inventory
-                        </Button>
-                        <Button
-                            variant={activeTab === "reports" ? "secondary" : "ghost"}
-                            className={`rounded-lg transition-all ${activeTab === "reports" ? "bg-primary/20 text-primary shadow-sm" : "hover:text-primary"}`}
+                            <Package className="w-4 h-4 mr-2" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <span className="font-medium">Inventory</span>
+                        </button>
+                        <button
+                            className={`px-4 py-2 rounded-lg transition-all flex items-center justify-center min-w-[120px] ${activeTab === "reports" ? "bg-primary text-white" : "text-white/70 hover:text-white"}`}
                             onClick={() => setActiveTab("reports")}
                         >
-                            <HistoryIcon className="w-4 h-4 mr-2" /> Reports
-                        </Button>
+                            <HistoryIcon className="w-4 h-4 mr-2" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <span className="font-medium">Reports</span>
+                        </button>
                     </div>
 
                     <Button
                         variant="ghost"
-                        className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center"
                         onClick={() => router.push("/admin")}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                        <ShieldCheck className="w-5 h-5 mr-2" /> Manager Panel
+                        <ShieldCheck className="w-5 h-5" size={20} strokeWidth={2} absoluteStrokeWidth style={{ flexShrink: 0, display: 'inline-block' }} />
+                        <span style={{ display: 'inline-block' }}>Manager Panel</span>
                     </Button>
                     <Button
                         variant="ghost"
-                        className="rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+                        className="rounded-xl hover:bg-destructive/10 hover:text-destructive group flex items-center"
                         onClick={handleSignOut}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                        <LogOut className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" /> Sign Out
+                        <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" size={20} strokeWidth={2} absoluteStrokeWidth style={{ flexShrink: 0, display: 'inline-block' }} />
+                        <span style={{ display: 'inline-block' }}>Sign Out</span>
                     </Button>
                 </div>
             </header>
@@ -124,27 +135,30 @@ export default function DashboardPage() {
                     {/* Controls */}
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="relative flex-1 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} strokeWidth={2} absoluteStrokeWidth />
                             <Input
-                                placeholder="Search parts, items, or labels..."
+                                placeholder="Search items, labels, or fields..."
                                 className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                            {categories.map((cat) => (
-                                <Button
-                                    key={cat}
-                                    variant={category === cat ? "default" : "secondary"}
-                                    className={`h-14 px-6 rounded-2xl transition-all ${category === cat ? "shadow-lg shadow-primary/20" : "bg-white/5 border-white/10"
-                                        }`}
-                                    onClick={() => setCategory(cat)}
-                                >
-                                    {cat}
-                                </Button>
-                            ))}
-                        </div>
+                        <Select value={category} onValueChange={setCategory}>
+                            <SelectTrigger className="w-full md:w-[240px] !h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all">
+                                <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent className="glass-dark border-white/10 rounded-xl">
+                                {categories.map((cat) => (
+                                    <SelectItem
+                                        key={cat}
+                                        value={cat}
+                                        className="focus:bg-primary/20 focus:text-primary cursor-pointer"
+                                    >
+                                        {cat}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Inventory List */}
@@ -157,7 +171,7 @@ export default function DashboardPage() {
                                     </div>
                                 ) : filteredItems.length === 0 ? (
                                     <div className="col-span-full py-20 flex flex-col items-center gap-4">
-                                        <Package className="w-12 h-12 text-muted-foreground opacity-20" />
+                                        <Package className="w-12 h-12 text-muted-foreground opacity-20" size={48} strokeWidth={2} absoluteStrokeWidth />
                                         <div className="text-muted-foreground text-lg italic">No items found matching your search.</div>
                                     </div>
                                 ) : (
@@ -180,7 +194,7 @@ export default function DashboardPage() {
                                                     </div>
                                                     {IsLowStock && (
                                                         <Badge variant="destructive" className="animate-pulse rounded-lg px-2 shrink-0">
-                                                            <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
+                                                            <AlertTriangle className="w-3 h-3 mr-1" size={12} strokeWidth={2} absoluteStrokeWidth /> Low Stock
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -202,7 +216,7 @@ export default function DashboardPage() {
                                                             className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
                                                             onClick={() => handleAdjustClick(item, "-")}
                                                         >
-                                                            <Minus className="w-8 h-8" />
+                                                            <Minus className="w-8 h-8" size={32} strokeWidth={2} absoluteStrokeWidth />
                                                         </Button>
                                                         <Button
                                                             variant="secondary"
@@ -210,7 +224,7 @@ export default function DashboardPage() {
                                                             className="h-16 w-16 rounded-2xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary transition-all active:scale-95 shadow-inner"
                                                             onClick={() => handleAdjustClick(item, "+")}
                                                         >
-                                                            <Plus className="w-8 h-8" />
+                                                            <Plus className="w-8 h-8" size={32} strokeWidth={2} absoluteStrokeWidth />
                                                         </Button>
                                                     </div>
                                                 </div>
@@ -232,7 +246,7 @@ export default function DashboardPage() {
                     <DialogHeader className="space-y-4">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${adjustmentType === '+' ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}`}>
-                                {adjustmentType === '+' ? <Plus /> : <Minus />}
+                                {adjustmentType === '+' ? <Plus size={24} strokeWidth={2} absoluteStrokeWidth /> : <Minus size={24} strokeWidth={2} absoluteStrokeWidth />}
                             </div>
                             Adjust Stock
                         </DialogTitle>

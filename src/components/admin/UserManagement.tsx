@@ -130,7 +130,7 @@ export function UserManagement() {
                             <TableRow key={user.id} className="border-white/5 hover:bg-white/5 transition-colors">
                                 <TableCell className="font-medium">
                                     {user.name}
-                                    {user.id === currentUser?.id && <Badge className="ml-2 bg-primary/20 text-primary border-0">You</Badge>}
+                                    {user.id === currentUser?.id && <Badge className="ml-2 bg-primary text-white border-0 font-medium">You</Badge>}
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant="outline" className="border-white/10">
