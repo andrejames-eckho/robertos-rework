@@ -39,8 +39,8 @@ export function TransactionReports() {
                             {isLoading ? "..." : transactions.length}
                         </h3>
                     </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
-                        <History className="text-primary w-6 h-6" />
+                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                        <History className="w-6 h-6 text-primary" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
                     </div>
                 </div>
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
@@ -50,8 +50,8 @@ export function TransactionReports() {
                             {isLoading ? "..." : transactions.filter(t => t.quantity_change > 0).length}
                         </h3>
                     </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
-                        <TrendingUp className="text-primary w-6 h-6" />
+                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-primary" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
                     </div>
                 </div>
                 <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
@@ -61,8 +61,8 @@ export function TransactionReports() {
                             {isLoading ? "..." : transactions.filter(t => t.quantity_change < 0).length}
                         </h3>
                     </div>
-                    <div className="w-12 h-12 bg-destructive/10 rounded-2xl flex items-center justify-center">
-                        <TrendingDown className="text-destructive w-6 h-6" />
+                    <div className="w-12 h-12 bg-destructive/20 rounded-2xl flex items-center justify-center">
+                        <TrendingDown className="w-6 h-6 text-destructive" size={24} strokeWidth={2} absoluteStrokeWidth role="img" />
                     </div>
                 </div>
             </div>
@@ -71,22 +71,27 @@ export function TransactionReports() {
             <div className="flex-1 glass-dark rounded-3xl p-6 flex flex-col gap-4 overflow-hidden">
                 <div className="flex justify-between items-center">
                     <div className="relative group w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground" size={18} strokeWidth={2} absoluteStrokeWidth />
                         <Input
                             placeholder="Search by item or user..."
                             className="pl-10 bg-white/5 border-white/10 rounded-xl"
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="ghost" className="rounded-xl border border-white/5 bg-white/5">
-                            <CalendarIcon className="w-4 h-4 mr-2" /> Today
+                        <Button
+                            variant="ghost"
+                            className="rounded-xl border border-white/5 bg-white/5 flex items-center gap-2"
+                        >
+                            <CalendarIcon className="w-4 h-4" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <span>Today</span>
                         </Button>
                         <Button
                             variant="secondary"
-                            className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary opacity-50 cursor-not-allowed"
+                            className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary opacity-50 cursor-not-allowed flex items-center gap-2"
                             disabled
                         >
-                            <Download className="w-4 h-4 mr-2" /> Export
+                            <Download className="w-4 h-4" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <span>Export</span>
                         </Button>
                     </div>
                 </div>
@@ -107,7 +112,8 @@ export function TransactionReports() {
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-20">
                                         <div className="flex items-center justify-center gap-2 text-primary animate-pulse font-bold">
-                                            <Loader2 className="animate-spin" /> LOADING REPORTS...
+                                            <Loader2 className="w-5 h-5 animate-spin" size={20} strokeWidth={2} absoluteStrokeWidth />
+                                            <span>LOADING REPORTS...</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
