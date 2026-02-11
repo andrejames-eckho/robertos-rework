@@ -83,8 +83,8 @@ export default function DashboardPage() {
             {/* Header */}
             <header className="flex justify-between items-center glass rounded-3xl p-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <Package className="text-primary w-6 h-6" size={24} strokeWidth={2} absoluteStrokeWidth />
+                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-2xl">
+                        📦
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-glow">Roberto's Inventory</h1>
