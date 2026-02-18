@@ -18,12 +18,22 @@ import { DateRangePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
-export function TransactionReports() {
+interface TransactionReportsProps {
+    isFullView?: boolean;
+    dateRange?: { start?: Date; end?: Date };
+    setDateRange?: (range: { start?: Date; end?: Date } | undefined) => void;
+}
+
+export function TransactionReports({ isFullView = false, dateRange: externalDateRange, setDateRange: externalSetDateRange }: TransactionReportsProps) {
     const { transactions, isLoading, items } = useInventory();
     const { users } = useUser();
     const [searchQuery, setSearchQuery] = useState("");
-    const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>();
+    const [internalDateRange, setInternalDateRange] = useState<{ start?: Date; end?: Date }>();
     const [showFilters, setShowFilters] = useState(false);
+
+    // Use external date range if provided (from parent), otherwise use internal state
+    const dateRange = externalDateRange || internalDateRange;
+    const setDateRange = externalSetDateRange || setInternalDateRange;
 
     // Filter transactions based on search and date range
     const filteredTransactions = useMemo(() => {
@@ -54,14 +64,6 @@ export function TransactionReports() {
         return filtered;
     }, [transactions, searchQuery, dateRange, users, items]);
 
-    // Calculate summary stats based on filtered data
-    const summaryStats = useMemo(() => {
-        const total = filteredTransactions.length;
-        const additions = filteredTransactions.filter(t => t.quantity_change > 0).length;
-        const removals = filteredTransactions.filter(t => t.quantity_change < 0).length;
-        return { total, additions, removals };
-    }, [filteredTransactions]);
-
     const quickFilterToday = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -76,65 +78,13 @@ export function TransactionReports() {
     };
 
     return (
-        <div className="flex flex-col gap-6 h-full overflow-hidden">
-            {/* Header / Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-                <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Total Logs</p>
-                        <h3 className="text-3xl font-black mt-1">
-                            {isLoading ? "..." : summaryStats.total}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <Icon size={24} color="hsl(var(--primary))">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                                <path d="M3 3v5h5"/>
-                            </svg>
-                        </Icon>
-                    </div>
-                </div>
-                <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Additions</p>
-                        <h3 className="text-3xl font-black mt-1 text-primary">
-                            {isLoading ? "..." : summaryStats.additions}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                        <Icon size={24} color="hsl(var(--primary))">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                                <polyline points="17 6 23 6 23 12"/>
-                            </svg>
-                        </Icon>
-                    </div>
-                </div>
-                <div className="glass-dark p-6 rounded-3xl flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Removals</p>
-                        <h3 className="text-3xl font-black mt-1 text-destructive">
-                            {isLoading ? "..." : summaryStats.removals}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 bg-destructive/20 rounded-2xl flex items-center justify-center">
-                        <Icon size={24} color="hsl(var(--destructive))">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
-                                <polyline points="17 18 23 18 23 12"/>
-                            </svg>
-                        </Icon>
-                    </div>
-                </div>
-            </div>
-
+        <div className={`flex flex-col gap-4 h-full overflow-hidden ${isFullView ? 'max-w-[95vw]' : ''}`}>
             {/* Table Section */}
             <div className="flex-1 glass-dark rounded-3xl p-6 flex flex-col gap-4 overflow-hidden">
                 {/* Search and Filter Controls */}
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-between items-center gap-4">
-                        <div className="relative group flex-1 max-w-sm">
+                        <div className={`relative group ${isFullView ? 'flex-1 max-w-lg' : 'flex-1 max-w-sm'}`}>
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground" size={18} strokeWidth={2} absoluteStrokeWidth />
                             <Input
                                 placeholder="Search by item or user..."
@@ -165,8 +115,35 @@ export function TransactionReports() {
                             </Button>
                             <Button
                                 variant="secondary"
-                                className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary opacity-50 cursor-not-allowed flex items-center gap-2"
-                                disabled
+                                className={`rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary flex items-center gap-2 ${!isFullView ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={!isFullView}
+                                onClick={() => {
+                                    // Basic CSV export functionality
+                                    const csvContent = [
+                                        ['Timestamp', 'User', 'Item', 'Unit', 'Change', 'ID'],
+                                        ...filteredTransactions.map(t => {
+                                            const item = items.find(i => i.id === t.item_id);
+                                            const unit = item?.unit || '';
+                                            const user = users.find(u => u.id === t.user_id)?.name || t.user_id;
+                                            return [
+                                                format(new Date(t.timestamp), "yyyy-MM-dd HH:mm:ss"),
+                                                user,
+                                                t.item_name,
+                                                unit,
+                                                t.quantity_change.toString(),
+                                                t.id.slice(0, 8)
+                                            ];
+                                        })
+                                    ].map(row => row.join(',')).join('\n');
+                                    
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `transaction-reports-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                }}
                             >
                                 <Download className="w-4 h-4" size={16} strokeWidth={2} absoluteStrokeWidth />
                                 <span>Export</span>

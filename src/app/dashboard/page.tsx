@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Minus, AlertTriangle, LogOut, Package, ShieldCheck, History as HistoryIcon } from "lucide-react";
+import { Search, Plus, Minus, AlertTriangle, LogOut, Package, ShieldCheck, ExternalLink } from "lucide-react";
 import { TransactionReports } from "@/components/dashboard/TransactionReports";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +111,15 @@ export default function DashboardPage() {
                             className={`px-4 py-2 rounded-lg transition-all flex items-center justify-center min-w-[120px] ${activeTab === "reports" ? "bg-primary text-white" : "text-white/70 hover:text-white"}`}
                             onClick={() => setActiveTab("reports")}
                         >
-                            <HistoryIcon className="w-4 h-4 mr-2" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <div className="w-4 h-4 mr-2 flex items-center justify-center">
+                                <Icon size={16} color="currentColor">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0 2-2z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="12" y1="18" x2="12" y2="12"/>
+                                    </svg>
+                                </Icon>
+                            </div>
                             <span className="font-medium">Reports</span>
                         </button>
                     </div>
@@ -244,7 +252,22 @@ export default function DashboardPage() {
                     </div>
                 </>
             ) : (
-                <TransactionReports />
+                <div className="flex flex-col gap-4 h-full">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-glow">Transaction Reports</h2>
+                        <Button
+                            variant="secondary"
+                            className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary flex items-center gap-2"
+                            onClick={() => router.push("/reports")}
+                        >
+                            <ExternalLink className="w-4 h-4" size={16} strokeWidth={2} absoluteStrokeWidth />
+                            <span>View Full Reports</span>
+                        </Button>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <TransactionReports />
+                    </div>
+                </div>
             )}
 
             {/* Adjust stock popup */}
