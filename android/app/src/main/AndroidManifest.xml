@@ -3,7 +3,7 @@
 
     <uses-sdk
         android:minSdkVersion="24"
-        android:targetSdkVersion="36" />
+        android:targetSdkVersion="29" />
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />

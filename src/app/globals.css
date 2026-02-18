@@ -99,6 +99,34 @@
     -ms-overflow-style: none;
   }
 
+  /* Sticky table headers for all platforms */
+  [data-slot="table-header"] {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+  }
+
+  [data-slot="table-header"] th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+    background-color: hsl(0 0% 8% / 0.5) !important;
+    backdrop-filter: blur(64px);
+    -webkit-backdrop-filter: blur(64px);
+  }
+
+  /* Ensure table container respects sticky positioning */
+  [data-slot="table-container"] {
+    position: relative;
+  }
+
+  /* Force sticky positioning for table headers */
+  thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
