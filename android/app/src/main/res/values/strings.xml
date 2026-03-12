@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Robertos Rework</string>
-    <string name="title_activity_main">Robertos Rework</string>
-    <string name="package_name">com.robertosrework.app</string>
-    <string name="custom_url_scheme">com.robertosrework.app</string>
+    <string name="app_name">StockTrack</string>
+    <string name="title_activity_main">StockTrack</string>
+    <string name="package_name">com.stocktrack.app</string>
+    <string name="custom_url_scheme">com.stocktrack.app</string>
 </resources>
