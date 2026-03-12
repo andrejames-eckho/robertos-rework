@@ -1,14 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { db, InventoryItem, Transaction } from "./db";
+import { db, InventoryItem, Transaction, Category } from "./db";
 import { useLiveQuery } from "dexie-react-hooks";
 
 interface InventoryContextType {
     items: InventoryItem[];
+    categories: Category[];
     transactions: Transaction[];
     isLoading: boolean;
     addItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+    addCategory: (name: string) => Promise<void>;
+    deleteCategory: (id: string) => Promise<void>;
     updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
     adjustStock: (itemId: string, quantityChange: number, userId: string) => Promise<void>;
@@ -19,6 +22,7 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
     // useLiveQuery automatically updates the component when the database changes
     const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+    const categories = useLiveQuery(() => db.categories.orderBy('name').toArray(), []) || [];
     const transactions = useLiveQuery(() => db.transactions.orderBy('timestamp').reverse().limit(100).toArray(), []) || [];
     const [isLoading, setIsLoading] = useState(true);
 
@@ -45,6 +49,17 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
             updated_at: now
         };
         await db.items.add(item);
+    };
+
+    const addCategory = async (name: string) => {
+        await db.categories.add({
+            id: crypto.randomUUID(),
+            name
+        });
+    };
+
+    const deleteCategory = async (id: string) => {
+        await db.categories.delete(id);
     };
 
     const updateItem = async (id: string, updates: Partial<InventoryItem>) => {
@@ -84,7 +99,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <InventoryContext.Provider value={{ items, transactions, isLoading, addItem, updateItem, deleteItem, adjustStock }}>
+        <InventoryContext.Provider value={{ items, categories, transactions, isLoading, addItem, addCategory, deleteCategory, updateItem, deleteItem, adjustStock }}>
             {children}
         </InventoryContext.Provider>
     );

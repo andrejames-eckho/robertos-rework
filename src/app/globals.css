@@ -31,25 +31,25 @@
 }
 
 :root {
-  --background: oklch(0.05 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.1 0 0 / 0.5);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.1 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.6 0.2 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.3 0 0 / 0.3);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.5 0.2 30);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.6 0.2 250 / 0.5);
+  --background: hsl(0 0% 4%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 8% / 0.5);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 8%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(217 91% 60%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 15%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 64%);
+  --accent: hsl(0 0% 25% / 0.3);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 100% / 0.1);
+  --input: hsl(0 0% 100% / 0.1);
+  --ring: hsl(217 91% 60% / 0.5);
   --radius: 1rem;
 }
 
@@ -57,31 +57,156 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground selection:bg-primary/30;
-    background-image: 
-      radial-gradient(at 0% 0%, oklch(0.15 0.05 250 / 0.15) 0, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.15 0.05 300 / 0.15) 0, transparent 50%);
-    background-attachment: fixed;
+    background-image:
+      radial-gradient(at 0% 0%, hsl(240 100% 15% / 0.1) 0, transparent 40%),
+      radial-gradient(at 100% 100%, hsl(300 100% 15% / 0.1) 0, transparent 40%);
+    /* Removed background-attachment: fixed to prevent Android stuttering */
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/5 border border-white/10 shadow-2xl;
+    /* Android WebView optimizations */
+    background-color: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    will-change: backdrop-filter, transform;
   }
+
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
+    @apply bg-black/40 border border-white/5 shadow-2xl;
+    /* Android WebView optimizations */
+    background-color: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
+    will-change: backdrop-filter, transform;
   }
+
   .text-glow {
     text-shadow: 0 0 20px currentColor;
   }
+
   .animate-pulse-slow {
     animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Android/Capacitor specific fixes */
+  .no-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  /* Sticky table headers for all platforms */
+  [data-slot="table-header"] {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+  }
+
+  [data-slot="table-header"] th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+    background-color: hsl(0 0% 8% / 0.5) !important;
+    backdrop-filter: blur(64px);
+    -webkit-backdrop-filter: blur(64px);
+  }
+
+  /* Ensure table container respects sticky positioning */
+  [data-slot="table-container"] {
+    position: relative;
+  }
+
+  /* Force sticky positioning for table headers */
+  thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Android WebView SVG rendering fixes */
+svg {
+  display: inline-block !important;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Ensure all text is visible on Android */
+button,
+button *,
+span,
+div {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Force text visibility in buttons */
+button span,
+button>* {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  color: inherit !important;
+}
+
+/* Hardware acceleration for better Android performance */
+.glass,
+.glass-dark,
+button,
+[role="button"] {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
+/* Touch-friendly tap targets for mobile */
+button,
+[role="button"],
+a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Fix for Android text rendering */
+* {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Safe area insets for Android */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }

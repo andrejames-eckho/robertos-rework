@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Delete, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { useUser } from "@/lib/user-context";
 
 export default function AuthPage() {
@@ -46,7 +47,12 @@ export default function AuthPage() {
             >
                 <div className="text-center space-y-2">
                     <div className="bg-primary/20 p-4 rounded-2xl inline-block mb-2">
-                        <Lock className="w-8 h-8 text-primary text-glow" />
+                        <Icon size={32} color="hsl(var(--primary))">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </Icon>
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-glow">StockTrack</h1>
                     <p className="text-muted-foreground">Enter Kiosk PIN to unlock</p>

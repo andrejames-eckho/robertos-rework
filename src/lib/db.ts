@@ -36,19 +36,26 @@ export interface AppSettings {
     updated_at: string;
 }
 
+export interface Category {
+    id: string;
+    name: string;
+}
+
 const db = new Dexie('StockTrackDB') as Dexie & {
     items: EntityTable<InventoryItem, 'id'>,
     transactions: EntityTable<Transaction, 'id'>,
     users: EntityTable<User, 'id'>,
-    settings: EntityTable<AppSettings, 'id'>
+    settings: EntityTable<AppSettings, 'id'>,
+    categories: EntityTable<Category, 'id'>
 };
 
-// Increment version to 3 for the new settings table
-db.version(3).stores({
+// Increment version to 4 for the new categories table
+db.version(4).stores({
     items: 'id, name, category',
     transactions: 'id, item_id, user_id, timestamp',
     users: 'id, name, pin, role',
-    settings: 'id'
+    settings: 'id',
+    categories: 'id, name'
 });
 
 export { db };
