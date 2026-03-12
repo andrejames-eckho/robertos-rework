@@ -8,13 +8,17 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     return (
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
             <motion.main
                 key={pathname}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{ willChange: "transform, opacity", backfaceVisibility: "hidden" }}
+                transition={{ 
+                    duration: 0.2, 
+                    ease: [0.23, 1, 0.32, 1] // Custom ease-out cubic
+                }}
                 className="relative z-10 w-full h-full"
             >
                 {children}

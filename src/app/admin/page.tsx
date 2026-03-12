@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useInventory } from "@/lib/inventory-context";
 import { useUser } from "@/lib/user-context";
 import {
@@ -82,10 +83,45 @@ export default function AdminPage() {
                 </aside>
 
                 {/* Main View Area */}
-                <main className="md:col-span-3 glass-dark rounded-3xl p-6 overflow-hidden flex flex-col">
-                    {activeView === "INVENTORY" && <InventoryView />}
-                    {activeView === "USERS" && <UserManagement />}
-                    {activeView === "SETTINGS" && <AppSettingsView />}
+                <main className="md:col-span-3 glass-dark rounded-3xl p-6 overflow-hidden flex flex-col relative">
+                    <AnimatePresence mode="wait">
+                        {activeView === "INVENTORY" && (
+                            <motion.div
+                                key="inventory"
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="h-full flex flex-col"
+                            >
+                                <InventoryView />
+                            </motion.div>
+                        )}
+                        {activeView === "USERS" && (
+                            <motion.div
+                                key="users"
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="h-full flex flex-col"
+                            >
+                                <UserManagement />
+                            </motion.div>
+                        )}
+                        {activeView === "SETTINGS" && (
+                            <motion.div
+                                key="settings"
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="h-full flex flex-col"
+                            >
+                                <AppSettingsView />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </main>
             </div>
         </div>

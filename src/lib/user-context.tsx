@@ -18,7 +18,12 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem("stocktrack_user_id");
+        }
+        return null;
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const users = useLiveQuery(() => db.users.toArray(), []) || [];
@@ -52,12 +57,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         }
                     ]);
                 }
-
-                // Check for persisted session
-                const savedUserId = localStorage.getItem("stocktrack_user_id");
-                if (savedUserId) {
-                    setCurrentUserId(savedUserId);
-                }
             } catch (error) {
                 console.error("Error initializing users:", error);
             } finally {
@@ -65,7 +64,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
         };
 
-        initUsers();
+        if (typeof window !== "undefined") {
+            initUsers();
+        }
     }, []);
 
     const login = async (pin: string): Promise<boolean> => {
