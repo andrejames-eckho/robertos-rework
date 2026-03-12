@@ -87,9 +87,9 @@ export default function DashboardPage() {
                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
                         <Icon size={24} color="hsl(var(--primary))">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                <line x1="12" y1="22.08" x2="12" y2="12" />
                             </svg>
                         </Icon>
                     </div>
@@ -114,9 +114,9 @@ export default function DashboardPage() {
                             <div className="w-4 h-4 mr-2 flex items-center justify-center">
                                 <Icon size={16} color="currentColor">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0 2-2z"/>
-                                        <polyline points="14 2 14 8 20 8"/>
-                                        <line x1="12" y1="18" x2="12" y2="12"/>
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0 2-2z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                        <line x1="12" y1="18" x2="12" y2="12" />
                                     </svg>
                                 </Icon>
                             </div>
@@ -307,11 +307,20 @@ export default function DashboardPage() {
                         <Input
                             type="number"
                             placeholder="0"
-                            className="text-center text-4xl h-24 bg-white/5 border-white/10 rounded-2xl focus:ring-primary font-black"
+                            className={`text-center text-4xl h-24 bg-white/5 border-white/10 rounded-2xl focus:ring-primary font-black ${adjustmentType === '-' && parseInt(adjustAmount) > (selectedItem?.quantity || 0)
+                                ? "border-destructive text-destructive"
+                                : ""
+                                }`}
                             value={adjustAmount}
                             onChange={(e) => setAdjustAmount(e.target.value)}
                             autoFocus
                         />
+                        {adjustmentType === '-' && parseInt(adjustAmount) > (selectedItem?.quantity || 0) && (
+                            <p className="text-destructive text-center mt-4 font-bold flex items-center justify-center gap-2">
+                                <AlertTriangle className="w-4 h-4" />
+                                Stock is too low
+                            </p>
+                        )}
                     </div>
 
                     <DialogFooter className="sm:justify-between gap-4">
@@ -325,6 +334,7 @@ export default function DashboardPage() {
                         <Button
                             className={`h-14 px-8 rounded-2xl text-lg font-bold flex-1 ${adjustmentType === '+' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}
                             onClick={handleConfirmAdjustment}
+                            disabled={adjustmentType === '-' && parseInt(adjustAmount) > (selectedItem?.quantity || 0)}
                         >
                             Confirm Adjustment
                         </Button>
