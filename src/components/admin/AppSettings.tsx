@@ -20,6 +20,9 @@ import {
     DialogFooter,
     DialogDescription
 } from "@/components/ui/dialog";
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export function AppSettingsView() {
     const { settings, updateSettings, exportData, importData, isLoading } = useSettings();
@@ -49,15 +52,33 @@ export function AppSettingsView() {
         setIsExporting(true);
         try {
             const data = await exportData();
-            const blob = new Blob([data], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `stocktrack_backup_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const filename = `stocktrack_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+            if (Capacitor.isNativePlatform()) {
+                const result = await Filesystem.writeFile({
+                    path: filename,
+                    data: data,
+                    directory: Directory.Cache,
+                    encoding: Encoding.UTF8
+                });
+                
+                await Share.share({
+                    title: 'StockTrack Backup',
+                    text: 'Here is my StockTrack Database Backup',
+                    url: result.uri,
+                    dialogTitle: 'Export Database Backup',
+                });
+            } else {
+                const blob = new Blob([data], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
         } catch (error) {
             console.error("Export failed:", error);
             alert("Failed to export data.");
@@ -76,7 +97,12 @@ export function AppSettingsView() {
 
         setIsImporting(true);
         try {
-            const text = await file.text();
+            const text = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target?.result as string);
+                reader.onerror = (error) => reject(error);
+                reader.readAsText(file);
+            });
             await importData(text);
             alert("Data restored successfully! The page will reload.");
             window.location.reload();
