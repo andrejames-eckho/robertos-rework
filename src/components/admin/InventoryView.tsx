@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useInventory } from "@/lib/inventory-context";
+import { useUser } from "@/lib/user-context";
 import { InventoryItem } from "@/lib/db";
 import {
     Plus,
@@ -54,6 +55,7 @@ type ItemFormData = {
 
 export function InventoryView() {
     const { items, categories, addItem, addCategory, deleteCategory, updateItem, deleteItem, isLoading } = useInventory();
+    const { currentUser } = useUser();
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
@@ -132,7 +134,7 @@ export function InventoryView() {
             if (editingItem) {
                 await updateItem(editingItem.id, formData);
             } else {
-                await addItem(formData);
+                await addItem(formData, currentUser?.id);
             }
             setIsAddOpen(false);
             setEditingItem(null);
