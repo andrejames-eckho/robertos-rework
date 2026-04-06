@@ -94,7 +94,7 @@ export default function DashboardPage() {
                         </Icon>
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-glow">Roberto's Inventory</h1>
+                        <h1 className="text-2xl font-bold tracking-tight text-glow">Stock Track</h1>
                         <p className="text-sm text-muted-foreground">Logged in as: <span className="text-primary font-bold">{currentUser?.name || "Loading..."}</span></p>
                     </div>
                 </div>

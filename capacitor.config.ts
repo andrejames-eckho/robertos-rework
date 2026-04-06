@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.robertosrework.app',
-  appName: 'Robertos Rework',
+  appId: 'com.stocktrack.app',
+  appName: 'StockTrack',
   webDir: 'out',
   android: {
     // Enable hardware acceleration for better performance

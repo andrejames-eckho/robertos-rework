@@ -17,6 +17,14 @@ import { Icon } from "@/components/ui/icon";
 import { DateRangePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Dialog } from '@capacitor/dialog';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+
 
 interface TransactionReportsProps {
     isFullView?: boolean;
@@ -115,34 +123,82 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                             </Button>
                             <Button
                                 variant="secondary"
-                                className={`rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary flex items-center gap-2 ${!isFullView ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={!isFullView}
-                                onClick={() => {
-                                    // Basic CSV export functionality
-                                    const csvContent = [
-                                        ['Timestamp', 'User', 'Item', 'Unit', 'Change', 'ID'],
-                                        ...filteredTransactions.map(t => {
-                                            const item = items.find(i => i.id === t.item_id);
-                                            const unit = item?.unit || '';
-                                            const user = users.find(u => u.id === t.user_id)?.name || t.user_id;
-                                            return [
-                                                format(new Date(t.timestamp), "yyyy-MM-dd HH:mm:ss"),
-                                                user,
-                                                t.item_name,
-                                                unit,
-                                                t.quantity_change.toString(),
-                                                t.id.slice(0, 8)
-                                            ];
-                                        })
-                                    ].map(row => row.join(',')).join('\n');
+                                className="rounded-xl bg-white/5 border-white/10 hover:bg-primary/20 hover:text-primary flex items-center gap-2"
+
+                                onClick={async () => {
+                                    const doc = new jsPDF();
                                     
-                                    const blob = new Blob([csvContent], { type: 'text/csv' });
-                                    const url = window.URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `transaction-reports-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-                                    a.click();
-                                    window.URL.revokeObjectURL(url);
+                                    // Add Title
+                                    doc.text('Transaction Report', 14, 15);
+                                    doc.setFontSize(10);
+                                    doc.text(`Generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`, 14, 22);
+                                    
+                                    // Table Data
+                                    const tableColumn = ["Timestamp", "User", "Item", "Change", "ID"];
+                                    const tableRows = filteredTransactions.map(t => {
+                                        const item = items.find(i => i.id === t.item_id);
+                                        const unit = item?.unit || '';
+                                        const user = users.find(u => u.id === t.user_id)?.name || t.user_id;
+                                        return [
+                                            format(new Date(t.timestamp), "yyyy-MM-dd HH:mm:ss"),
+                                            user,
+                                            `${t.item_name} ${unit ? `(${unit})` : ''}`,
+                                            `${t.quantity_change > 0 ? '+' : ''}${t.quantity_change}`,
+                                            t.id.slice(0, 8)
+                                        ];
+                                    });
+
+                                    autoTable(doc, {
+                                        startY: 30,
+                                        head: [tableColumn],
+                                        body: tableRows,
+                                    });
+
+                                    const fileName = `transaction-reports-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+
+                                    if (Capacitor.isNativePlatform()) {
+                                        try {
+                                            const status = await Filesystem.requestPermissions();
+                                            if (status.publicStorage !== 'granted') {
+                                                console.warn("Permissions not granted for public storage.");
+                                            }
+
+                                            // Get pdf as datauri string and strip prefix
+                                            const pdfOutput = doc.output('datauristring');
+                                            const pdfBase64 = pdfOutput.split(',')[1];
+
+                                            const result = await Filesystem.writeFile({
+                                                path: fileName,
+                                                data: pdfBase64,
+                                                directory: Directory.Documents,
+                                            });
+                                            
+                                            await Dialog.alert({
+                                                title: 'Export Success',
+                                                message: `File saved to your Documents folder:\n${fileName}`,
+                                            });
+
+                                             try {
+                                                await Share.share({
+                                                    title: 'Export Transactions',
+                                                    text: 'Transaction Report',
+                                                    url: result.uri,
+                                                    dialogTitle: 'Share Transaction Report',
+                                                });
+                                            } catch (shareError) {
+                                                console.log("Share sheet closed or failed:", shareError);
+                                            }
+
+                                        } catch (error) {
+                                            console.error('Error exporting file on Capacitor:', error);
+                                            await Dialog.alert({
+                                                title: 'Export Failed',
+                                                message: 'Could not save file. Please check permissions.',
+                                            });
+                                        }
+                                    } else {
+                                        doc.save(fileName);
+                                    }
                                 }}
                             >
                                 <Download className="w-4 h-4" size={16} strokeWidth={2} absoluteStrokeWidth />
