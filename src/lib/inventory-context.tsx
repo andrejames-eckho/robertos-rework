@@ -9,7 +9,7 @@ interface InventoryContextType {
     categories: Category[];
     transactions: Transaction[];
     isLoading: boolean;
-    addItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+    addItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>, userId?: string) => Promise<void>;
     addCategory: (name: string) => Promise<void>;
     deleteCategory: (id: string) => Promise<void>;
     updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<void>;
@@ -40,7 +40,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         initDb();
     }, []);
 
-    const addItem = async (newItem: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
+    const addItem = async (newItem: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>, userId?: string) => {
         const now = new Date().toISOString();
         const item: InventoryItem = {
             ...newItem,
@@ -48,7 +48,21 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
             created_at: now,
             updated_at: now
         };
-        await db.items.add(item);
+        
+        await db.transaction('rw', db.items, db.transactions, async () => {
+            await db.items.add(item);
+            
+            if (userId) {
+                await db.transactions.add({
+                    id: crypto.randomUUID(),
+                    item_id: item.id,
+                    item_name: item.name,
+                    user_id: userId,
+                    quantity_change: item.quantity,
+                    timestamp: now
+                });
+            }
+        });
     };
 
     const addCategory = async (name: string) => {
