@@ -56,6 +56,14 @@ export function InventoryView() {
     });
     const router = useRouter();
 
+    const sortedItems = [...items].sort((a, b) => {
+        const aLow = a.quantity < a.low_stock_threshold;
+        const bLow = b.quantity < b.low_stock_threshold;
+        if (aLow && !bLow) return -1;
+        if (!aLow && bLow) return 1;
+        return a.name.localeCompare(b.name);
+    });
+
     const handleSave = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
@@ -157,7 +165,7 @@ export function InventoryView() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            items.map((item) => (
+                            sortedItems.map((item) => (
                                 <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>

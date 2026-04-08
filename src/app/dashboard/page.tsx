@@ -33,11 +33,19 @@ export default function DashboardPage() {
     const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
 
     const filteredItems = useMemo(() => {
-        return items.filter((item) => {
-            const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-            const matchesCategory = category === "All" || item.category === category;
-            return matchesSearch && matchesCategory;
-        });
+        return items
+            .filter((item) => {
+                const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+                const matchesCategory = category === "All" || item.category === category;
+                return matchesSearch && matchesCategory;
+            })
+            .sort((a, b) => {
+                const aLow = a.quantity < a.low_stock_threshold;
+                const bLow = b.quantity < b.low_stock_threshold;
+                if (aLow && !bLow) return -1;
+                if (!aLow && bLow) return 1;
+                return a.name.localeCompare(b.name);
+            });
     }, [items, search, category]);
 
     const handleAdjustClick = (item: InventoryItem, type: "+" | "-") => {
