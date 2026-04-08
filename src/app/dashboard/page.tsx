@@ -43,10 +43,17 @@ export default function DashboardPage() {
     const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
 
     const filteredItems = useMemo(() => {
-        return items.filter((item) => {
+        const filtered = items.filter((item) => {
             const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
             const matchesCategory = category === "All" || item.category === category;
             return matchesSearch && matchesCategory;
+        });
+
+        // Sort low stock items to the top
+        return [...filtered].sort((a, b) => {
+            const aLow = a.quantity < a.low_stock_threshold ? 0 : 1;
+            const bLow = b.quantity < b.low_stock_threshold ? 0 : 1;
+            return aLow - bLow;
         });
     }, [items, search, category]);
 

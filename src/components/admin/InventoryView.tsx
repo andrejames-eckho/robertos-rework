@@ -117,6 +117,13 @@ export function InventoryView() {
             filtered = filtered.filter(item => item.quantity > 0 && item.quantity >= item.low_stock_threshold);
         }
 
+        // Sort low stock items to the top
+        filtered = [...filtered].sort((a, b) => {
+            const aLow = a.quantity < a.low_stock_threshold ? 0 : 1;
+            const bLow = b.quantity < b.low_stock_threshold ? 0 : 1;
+            return aLow - bLow;
+        });
+
         return filtered;
     }, [items, searchQuery, dateRange, selectedCategory, stockFilter]);
 
@@ -379,8 +386,10 @@ export function InventoryView() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredItems.map((item) => (
-                                <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
+                                filteredItems.map((item) => {
+                                const isLowStock = item.quantity < item.low_stock_threshold;
+                                return (
+                                <TableRow key={item.id} className={`border-white/5 hover:bg-white/5 transition-colors group ${isLowStock ? "bg-destructive/5 border-l-2 border-l-destructive" : ""}`}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="border-white/10">{item.category}</Badge>
@@ -418,7 +427,8 @@ export function InventoryView() {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
