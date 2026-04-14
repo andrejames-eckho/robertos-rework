@@ -55,7 +55,7 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                 const unit = item?.unit || '';
                 return t.item_name.toLowerCase().includes(query) ||
                        unit.toLowerCase().includes(query) ||
-                       users.find(u => u.id === t.user_id)?.name.toLowerCase().includes(query);
+                       (users.find(u => u.id === t.user_id)?.name || t.user_name || '').toLowerCase().includes(query);
             });
         }
 
@@ -163,7 +163,7 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                                     const tableRows = filteredTransactions.map(t => {
                                         const item = items.find(i => i.id === t.item_id);
                                         const unit = item?.unit || '';
-                                        const user = users.find(u => u.id === t.user_id)?.name || t.user_id;
+                                        const user = users.find(u => u.id === t.user_id)?.name || t.user_name || t.user_id;
                                         return [
                                             format(new Date(t.timestamp), "yyyy-MM-dd HH:mm:ss"),
                                             user,
@@ -394,7 +394,7 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                                             {format(new Date(t.timestamp), "MMM dd, HH:mm:ss")}
                                         </td>
                                         <td className="font-bold">
-                                            {users.find(u => u.id === t.user_id)?.name || t.user_id}
+                                            {users.find(u => u.id === t.user_id)?.name || t.user_name || t.user_id}
                                         </td>
                                         <td>
                                             <div>
