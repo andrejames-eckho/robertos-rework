@@ -55,7 +55,7 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                 const unit = item?.unit || '';
                 return t.item_name.toLowerCase().includes(query) ||
                        unit.toLowerCase().includes(query) ||
-                       users.find(u => u.id === t.user_id)?.name.toLowerCase().includes(query);
+                       (users.find(u => u.id === t.user_id)?.name || t.user_name || '').toLowerCase().includes(query);
             });
         }
 
@@ -127,18 +127,43 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
 
                                 onClick={async () => {
                                     const doc = new jsPDF();
-                                    
+                                    const generatedOn = format(new Date(), 'yyyy-MM-dd');
+
+                                    // Determine the transaction date range
+                                    let txStart: Date | undefined;
+                                    let txEnd: Date | undefined;
+
+                                    if (dateRange?.start || dateRange?.end) {
+                                        // Use the active filter range
+                                        txStart = dateRange.start;
+                                        txEnd = dateRange.end;
+                                    } else if (filteredTransactions.length > 0) {
+                                        // Derive from actual transaction timestamps
+                                        const timestamps = filteredTransactions.map(t => new Date(t.timestamp).getTime());
+                                        txStart = new Date(Math.min(...timestamps));
+                                        txEnd = new Date(Math.max(...timestamps));
+                                        // Normalize to start/end of those days
+                                        txStart.setHours(0, 0, 0, 0);
+                                        txEnd.setHours(23, 59, 59, 999);
+                                    }
+
+                                    const txStartStr = txStart ? format(txStart, 'yyyy-MM-dd') : generatedOn;
+                                    const txEndStr = txEnd ? format(txEnd, 'yyyy-MM-dd') : generatedOn;
+                                    const txDateRange = `${txStartStr}/${txEndStr}`;
+
                                     // Add Title
+                                    doc.setFontSize(14);
                                     doc.text('Transaction Report', 14, 15);
                                     doc.setFontSize(10);
-                                    doc.text(`Generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`, 14, 22);
-                                    
+                                    doc.text(`Generated on: ${generatedOn}`, 14, 23);
+                                    doc.text(`Transaction Dates: ${txDateRange}`, 14, 29);
+
                                     // Table Data
                                     const tableColumn = ["Timestamp", "User", "Item", "Change", "ID"];
                                     const tableRows = filteredTransactions.map(t => {
                                         const item = items.find(i => i.id === t.item_id);
                                         const unit = item?.unit || '';
-                                        const user = users.find(u => u.id === t.user_id)?.name || t.user_id;
+                                        const user = users.find(u => u.id === t.user_id)?.name || t.user_name || t.user_id;
                                         return [
                                             format(new Date(t.timestamp), "yyyy-MM-dd HH:mm:ss"),
                                             user,
@@ -149,12 +174,13 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                                     });
 
                                     autoTable(doc, {
-                                        startY: 30,
+                                        startY: 36,
                                         head: [tableColumn],
                                         body: tableRows,
                                     });
 
-                                    const fileName = `transaction-reports-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+                                    // Slashes are invalid in filenames — use underscore separator
+                                    const fileName = `transaction-reports-${txStartStr}_${txEndStr}.pdf`;
 
                                     if (Capacitor.isNativePlatform()) {
                                         try {
@@ -368,7 +394,7 @@ export function TransactionReports({ isFullView = false, dateRange: externalDate
                                             {format(new Date(t.timestamp), "MMM dd, HH:mm:ss")}
                                         </td>
                                         <td className="font-bold">
-                                            {users.find(u => u.id === t.user_id)?.name || t.user_id}
+                                            {users.find(u => u.id === t.user_id)?.name || t.user_name || t.user_id}
                                         </td>
                                         <td>
                                             <div>

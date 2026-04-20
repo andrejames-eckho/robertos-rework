@@ -49,15 +49,18 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
             updated_at: now
         };
         
+        const user = userId ? await db.users.get(userId) : undefined;
+
         await db.transaction('rw', db.items, db.transactions, async () => {
             await db.items.add(item);
-            
+
             if (userId) {
                 await db.transactions.add({
                     id: crypto.randomUUID(),
                     item_id: item.id,
                     item_name: item.name,
                     user_id: userId,
+                    user_name: user?.name,
                     quantity_change: item.quantity,
                     timestamp: now
                 });
@@ -88,7 +91,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     };
 
     const adjustStock = async (itemId: string, quantityChange: number, userId: string) => {
-        const item = await db.items.get(itemId);
+        const [item, user] = await Promise.all([
+            db.items.get(itemId),
+            db.users.get(userId)
+        ]);
         if (!item) return;
 
         const newQuantity = item.quantity + quantityChange;
@@ -106,6 +112,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
                 item_id: itemId,
                 item_name: item.name,
                 user_id: userId,
+                user_name: user?.name,
                 quantity_change: quantityChange,
                 timestamp: new Date().toISOString()
             });
