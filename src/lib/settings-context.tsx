@@ -10,6 +10,7 @@ interface SettingsContextType {
     updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
     exportData: () => Promise<string>;
     importData: (jsonData: string) => Promise<void>;
+    resetDatabase: () => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -97,8 +98,30 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const resetDatabase = async () => {
+        const now = new Date().toISOString();
+        await db.transaction("rw", [db.items, db.transactions, db.users, db.settings, db.categories], async () => {
+            await db.items.clear();
+            await db.transactions.clear();
+            await db.users.clear();
+            await db.settings.clear();
+            await db.categories.clear();
+
+            await db.users.bulkAdd([
+                { id: "admin_1234", name: "Admin", pin: "1234", role: "ADMIN", created_at: now },
+                { id: "super_8888", name: "Super Admin", pin: "8888", role: "SUPER_ADMIN", created_at: now }
+            ]);
+            await db.settings.add({
+                id: "default",
+                storeName: "Roberto's StockTrack",
+                defaultLowStockThreshold: 10,
+                updated_at: now
+            });
+        });
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, isLoading, updateSettings, exportData, importData }}>
+        <SettingsContext.Provider value={{ settings, isLoading, updateSettings, exportData, importData, resetDatabase }}>
             {children}
         </SettingsContext.Provider>
     );

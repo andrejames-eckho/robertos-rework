@@ -25,10 +25,11 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
 export function AppSettingsView() {
-    const { settings, updateSettings, exportData, importData, isLoading } = useSettings();
+    const { settings, updateSettings, exportData, importData, resetDatabase, isLoading } = useSettings();
     const [isSaving, setIsSaving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -231,11 +232,19 @@ export function AppSettingsView() {
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setShowResetConfirm(false)}>Cancel</Button>
-                        <Button variant="destructive" onClick={async () => {
-                            // Implementation for reset would go here, maybe added to SettingsContext
-                            setShowResetConfirm(false);
-                            alert("Please restore from a backup if you need to recover data. (Reset function not fully implemented yet for safety)");
+                        <Button variant="destructive" disabled={isResetting} onClick={async () => {
+                            setIsResetting(true);
+                            try {
+                                await resetDatabase();
+                                setShowResetConfirm(false);
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Reset failed:", error);
+                                alert("Failed to reset database.");
+                                setIsResetting(false);
+                            }
                         }}>
+                            {isResetting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                             Confirm Reset
                         </Button>
                     </DialogFooter>
