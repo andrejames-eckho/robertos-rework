@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StockTrack
+
+Kiosk-mode inventory management app for Android tablets. Tracks stock movements, logs every transaction to a user, and alerts staff on low-stock items.
+
+Built with Next.js + Capacitor (Android), Supabase backend, and Tailwind CSS.
+
+## Features
+
+- **Kiosk mode** — locks device to single-purpose inventory interface
+- **User authentication** — role-based access (employee / admin)
+- **Stock adjustments** — +/− buttons with quantity popup; all changes logged
+- **Transaction logging** — every adjustment records user, item, quantity, and timestamp
+- **Search & category filtering** — real-time search across full inventory
+- **Low-stock alerts** — visual highlights when items fall below threshold
+- **Admin panel** — add/edit items, set thresholds, manage users
+- **Reports page** — transaction log with date range filters (day/week/month/year/custom), exportable as PDF
+
+## Tech Stack
+
+| Layer | Tool |
+|-------|------|
+| Framework | Next.js 16 + React 19 |
+| Mobile | Capacitor 8 (Android) |
+| Backend / Auth | Supabase |
+| Offline storage | Dexie (IndexedDB) |
+| UI | Tailwind CSS v4, shadcn/ui, Radix UI |
+| Animations | Framer Motion |
+| PDF export | jsPDF + jspdf-autotable |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- Android Studio (for Android builds)
+- Supabase project with credentials
+
+### Install
+
+```bash
+npm install
+```
+
+### Environment
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Run (web dev server)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for Android
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npx cap sync android
+npx cap open android
+```
 
-## Learn More
+Then build/run from Android Studio.
 
-To learn more about Next.js, take a look at the following resources:
+## App Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── auth/          # Login page
+│   ├── dashboard/     # Main inventory view
+│   ├── admin/         # Admin panel (inventory + user management)
+│   └── reports/       # Transaction reports
+├── components/
+│   ├── admin/         # InventoryView, UserManagement, AppSettings
+│   ├── dashboard/     # TransactionReports, TransactionSummaryCompact
+│   └── ui/            # Shared UI components
+└── lib/               # Context providers (inventory, user, settings)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Roles
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Role | Access |
+|------|--------|
+| Employee | Dashboard — search, filter, adjust stock |
+| Admin | All employee access + admin panel + reports |
