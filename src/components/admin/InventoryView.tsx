@@ -110,17 +110,17 @@ export function InventoryView() {
 
         // Apply stock filter
         if (stockFilter === "low") {
-            filtered = filtered.filter(item => item.quantity < item.low_stock_threshold);
+            filtered = filtered.filter(item => item.quantity <= item.low_stock_threshold);
         } else if (stockFilter === "out") {
             filtered = filtered.filter(item => item.quantity === 0);
         } else if (stockFilter === "in_stock") {
-            filtered = filtered.filter(item => item.quantity > 0 && item.quantity >= item.low_stock_threshold);
+            filtered = filtered.filter(item => item.quantity > 0 && item.quantity > item.low_stock_threshold);
         }
 
         // Sort low stock items to the top
         filtered = [...filtered].sort((a, b) => {
-            const aLow = a.quantity < a.low_stock_threshold ? 0 : 1;
-            const bLow = b.quantity < b.low_stock_threshold ? 0 : 1;
+            const aLow = a.quantity <= a.low_stock_threshold ? 0 : 1;
+            const bLow = b.quantity <= b.low_stock_threshold ? 0 : 1;
             return aLow - bLow;
         });
 
@@ -297,7 +297,7 @@ export function InventoryView() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Categories</SelectItem>
-                                            {categories.map((cat) => (
+                                            {categories.filter(cat => cat.name).map((cat) => (
                                                 <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -387,7 +387,7 @@ export function InventoryView() {
                                 </TableRow>
                             ) : (
                                 filteredItems.map((item) => {
-                                const isLowStock = item.quantity < item.low_stock_threshold;
+                                const isLowStock = item.quantity <= item.low_stock_threshold;
                                 return (
                                 <TableRow key={item.id} className={`border-white/5 hover:bg-white/5 transition-colors group ${isLowStock ? "bg-destructive/5 border-l-2 border-l-destructive" : ""}`}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
@@ -398,7 +398,7 @@ export function InventoryView() {
                                         {item.unit}
                                     </TableCell>
                                     <TableCell className="text-center font-bold">
-                                        <span className={item.quantity < item.low_stock_threshold ? "text-destructive" : "text-primary"}>
+                                        <span className={item.quantity <= item.low_stock_threshold ? "text-destructive" : "text-primary"}>
                                             {item.quantity}
                                         </span>
                                     </TableCell>
@@ -467,7 +467,7 @@ export function InventoryView() {
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {categories.map((cat) => (
+                                        {categories.filter(cat => cat.name).map((cat) => (
                                             <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                                         ))}
                                     </SelectContent>
