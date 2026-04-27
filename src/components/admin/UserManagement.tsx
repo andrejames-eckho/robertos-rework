@@ -173,7 +173,7 @@ export function UserManagement() {
                 setIsAddOpen(open);
                 if (!open) setEditingUser(null);
             }}>
-                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold">{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
                         <DialogDescription>
@@ -230,7 +230,7 @@ export function UserManagement() {
 
             {/* Delete Confirmation */}
             <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
-                <DialogContent className="glass-dark border-white/10 rounded-[2rem] sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-[2rem] sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader className="space-y-4">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-destructive/20 text-destructive">

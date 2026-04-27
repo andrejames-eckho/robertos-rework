@@ -297,7 +297,7 @@ export default function DashboardPage() {
 
             {/* Adjust stock popup */}
             <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-                <DialogContent className="glass-dark border-white/10 rounded-[2xl] sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-[2xl] sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader className="space-y-4">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${adjustmentType === '+' ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}`}>

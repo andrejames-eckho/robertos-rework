@@ -220,7 +220,7 @@ export function AppSettingsView() {
 
             {/* Reset Confirmation Dialog */}
             <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
-                <DialogContent className="glass-dark border-white/10 rounded-[2rem]">
+                <DialogContent className="glass-dark border-white/10 rounded-[2rem]" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="text-destructive flex items-center gap-2">
                             <AlertTriangle className="w-6 h-6" />
