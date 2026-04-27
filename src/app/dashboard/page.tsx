@@ -40,7 +40,7 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState<"inventory" | "reports">("inventory");
     const router = useRouter();
 
-    const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
+    const categories = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category).filter(Boolean)))], [items]);
 
     const filteredItems = useMemo(() => {
         const filtered = items.filter((item) => {
@@ -51,8 +51,8 @@ export default function DashboardPage() {
 
         // Sort low stock items to the top
         return [...filtered].sort((a, b) => {
-            const aLow = a.quantity < a.low_stock_threshold ? 0 : 1;
-            const bLow = b.quantity < b.low_stock_threshold ? 0 : 1;
+            const aLow = a.quantity <= a.low_stock_threshold ? 0 : 1;
+            const bLow = b.quantity <= b.low_stock_threshold ? 0 : 1;
             return aLow - bLow;
         });
     }, [items, search, category]);
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                                             </div>
                                         ) : (
                                             filteredItems.map((item) => {
-                                                const IsLowStock = item.quantity < item.low_stock_threshold;
+                                                const IsLowStock = item.quantity <= item.low_stock_threshold;
                                                 return (
                                                     <motion.div
                                                         key={item.id}
