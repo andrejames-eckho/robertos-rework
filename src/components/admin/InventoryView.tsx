@@ -439,7 +439,7 @@ export function InventoryView() {
                 setIsAddOpen(open);
                 if (!open) setEditingItem(null);
             }}>
-                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-lg">
+                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold">{editingItem ? "Edit Item" : "Add New Item"}</DialogTitle>
                         <DialogDescription>
@@ -515,7 +515,7 @@ export function InventoryView() {
             <Dialog open={!!itemToDelete} onOpenChange={(open) => {
                 if (!open) setItemToDelete(null);
             }}>
-                <DialogContent className="glass-dark border-white/10 rounded-4xl sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-4xl sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader className="space-y-4">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-destructive/20 text-destructive">
@@ -550,7 +550,7 @@ export function InventoryView() {
             </Dialog>
             {/* Category Manager Dialog */}
             <Dialog open={isCategoryManagerOpen} onOpenChange={setIsCategoryManagerOpen}>
-                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-md">
+                <DialogContent className="glass-dark border-white/10 rounded-3xl sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold">Manage Categories</DialogTitle>
                         <DialogDescription>
