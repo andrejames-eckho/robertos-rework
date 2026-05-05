@@ -45,15 +45,17 @@ export function UserManagement() {
     });
 
     const handleSave = async () => {
-        if (!formData.name || !formData.pin) return;
+        if (!formData.name) return;
+        if (!editingUser && !formData.pin) return;  // new users require a PIN
         setIsSubmitting(true);
         try {
             if (editingUser) {
-                await updateUser(editingUser.id, {
+                const updates: { name: string; role: typeof formData.role; pin?: string } = {
                     name: formData.name,
-                    pin: formData.pin,
-                    role: formData.role
-                });
+                    role: formData.role,
+                };
+                if (formData.pin) updates.pin = formData.pin;  // only update PIN if entered
+                await updateUser(editingUser.id, updates);
             } else {
                 await addUser({
                     id: crypto.randomUUID(),
@@ -90,7 +92,7 @@ export function UserManagement() {
         setEditingUser(user);
         setFormData({
             name: user.name,
-            pin: user.pin,
+            pin: "",  // blank — only update PIN if user enters a new one
             role: user.role
         });
         setIsAddOpen(true);
@@ -138,7 +140,7 @@ export function UserManagement() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="font-mono text-muted-foreground">
-                                    {user.role === 'SUPER_ADMIN' && currentUser?.role !== 'SUPER_ADMIN' ? '****' : user.pin}
+                                    ••••
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
@@ -192,13 +194,16 @@ export function UserManagement() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <label className="text-sm font-bold opacity-70">PIN (4-6 digits)</label>
+                            <label className="text-sm font-bold opacity-70">
+                                PIN (4-6 digits){editingUser ? " — leave blank to keep current" : ""}
+                            </label>
                             <Input
                                 className="bg-white/5 border-white/10"
                                 value={formData.pin}
                                 onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
-                                placeholder="1234"
+                                placeholder={editingUser ? "Leave blank to keep current PIN" : "4-6 digits"}
                                 maxLength={6}
+                                type="password"
                             />
                         </div>
                         <div className="grid gap-2">

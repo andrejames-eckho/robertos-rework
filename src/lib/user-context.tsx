@@ -2,7 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { db, User } from "./db";
+import { generateSalt, hashPin } from "./crypto";
 import { useLiveQuery } from "dexie-react-hooks";
+
+type UserRole = 'STANDARD' | 'ADMIN' | 'SUPER_ADMIN';
 
 interface UserContextType {
     currentUser: User | null;
@@ -10,8 +13,8 @@ interface UserContextType {
     login: (pin: string) => Promise<boolean>;
     logout: () => void;
     users: User[];
-    addUser: (user: Omit<User, "created_at">) => Promise<void>;
-    updateUser: (id: string, updates: Partial<Omit<User, "id" | "created_at">>) => Promise<void>;
+    addUser: (userData: { id: string; name: string; pin: string; role: UserRole }) => Promise<void>;
+    updateUser: (id: string, updates: { name?: string; pin?: string; role?: UserRole }) => Promise<void>;
     deleteUser: (id: string) => Promise<void>;
 }
 
@@ -36,27 +39,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const initUsers = async () => {
             setIsLoading(true);
             try {
-                // Seed default users if table is empty
-                const count = await db.users.count();
-                if (count === 0) {
-                    const now = new Date().toISOString();
-                    await db.users.bulkAdd([
-                        {
-                            id: "admin_1234",
-                            name: "Admin",
-                            pin: "1234",
-                            role: "ADMIN",
-                            created_at: now
-                        },
-                        {
-                            id: "super_8888",
-                            name: "Super Admin",
-                            pin: "8888",
-                            role: "SUPER_ADMIN",
-                            created_at: now
-                        }
-                    ]);
-                }
+                // No default users seeded — first-run setup wizard handles account creation
+                await db.users.count();
             } catch (error) {
                 console.error("Error initializing users:", error);
             } finally {
@@ -70,11 +54,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const login = async (pin: string): Promise<boolean> => {
-        const user = await db.users.where("pin").equals(pin).first();
-        if (user) {
-            setCurrentUserId(user.id);
-            localStorage.setItem("stocktrack_user_id", user.id);
-            return true;
+        const allUsers = await db.users.toArray();
+        for (const user of allUsers) {
+            if (!user.pin_salt) continue;
+            const hash = await hashPin(pin, user.pin_salt);
+            if (hash === user.pin) {
+                setCurrentUserId(user.id);
+                localStorage.setItem("stocktrack_user_id", user.id);
+                return true;
+            }
         }
         return false;
     };
@@ -84,15 +72,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("stocktrack_user_id");
     };
 
-    const addUser = async (user: Omit<User, "created_at">) => {
+    const addUser = async (userData: { id: string; name: string; pin: string; role: UserRole }) => {
+        const salt = generateSalt();
+        const hash = await hashPin(userData.pin, salt);
         await db.users.add({
-            ...user,
+            id: userData.id,
+            name: userData.name,
+            pin: hash,
+            pin_salt: salt,
+            role: userData.role,
             created_at: new Date().toISOString()
         });
     };
 
-    const updateUser = async (id: string, updates: Partial<Omit<User, "id" | "created_at">>) => {
-        await db.users.update(id, updates);
+    const updateUser = async (id: string, updates: { name?: string; pin?: string; role?: UserRole }) => {
+        const dbUpdates: Partial<User> = {};
+        if (updates.name !== undefined) dbUpdates.name = updates.name;
+        if (updates.role !== undefined) dbUpdates.role = updates.role;
+        if (updates.pin !== undefined) {
+            const salt = generateSalt();
+            const hash = await hashPin(updates.pin, salt);
+            dbUpdates.pin = hash;
+            dbUpdates.pin_salt = salt;
+        }
+        await db.users.update(id, dbUpdates);
     };
 
     const deleteUser = async (id: string) => {

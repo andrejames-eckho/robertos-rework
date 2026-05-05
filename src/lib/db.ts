@@ -1,9 +1,11 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { generateSalt, hashPin } from './crypto';
 
 export interface User {
     id: string;
     name: string;
-    pin: string;
+    pin: string;      // PBKDF2 hash (base64)
+    pin_salt: string; // random salt (base64)
     role: 'STANDARD' | 'ADMIN' | 'SUPER_ADMIN';
     created_at: string;
 }
@@ -34,6 +36,7 @@ export interface AppSettings {
     storeName: string;
     defaultLowStockThreshold: number;
     updated_at: string;
+    recoveryTotpSecret?: string;
 }
 
 export interface Category {
@@ -49,13 +52,31 @@ const db = new Dexie('StockTrackDB') as Dexie & {
     categories: EntityTable<Category, 'id'>
 };
 
-// Increment version to 4 for the new categories table
 db.version(4).stores({
     items: 'id, name, category',
     transactions: 'id, item_id, user_id, timestamp',
     users: 'id, name, pin, role',
     settings: 'id',
     categories: 'id, name'
+});
+
+// Version 5: add pin_salt field; migrate existing plaintext PINs to PBKDF2 hashes
+db.version(5).stores({
+    items: 'id, name, category',
+    transactions: 'id, item_id, user_id, timestamp',
+    users: 'id, name, pin, pin_salt, role',
+    settings: 'id',
+    categories: 'id, name'
+}).upgrade(async tx => {
+    const usersTable = tx.table<User, string>('users');
+    const users = await usersTable.toArray();
+    for (const user of users) {
+        if (!user.pin_salt) {
+            const salt = generateSalt();
+            const hash = await hashPin(user.pin, salt);
+            await usersTable.update(user.id, { pin: hash, pin_salt: salt });
+        }
+    }
 });
 
 export { db };

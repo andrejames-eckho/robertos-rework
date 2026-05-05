@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { db, AppSettings } from "./db";
+import { db, AppSettings, User } from "./db";
+import { generateSalt, hashPin, generateTotpSecret, verifyTotp } from "./crypto";
 import { useLiveQuery } from "dexie-react-hooks";
 
 interface SettingsContextType {
@@ -11,6 +12,8 @@ interface SettingsContextType {
     exportData: () => Promise<string>;
     importData: (jsonData: string) => Promise<void>;
     resetDatabase: () => Promise<void>;
+    regenerateRecoverySecret: () => Promise<void>;
+    checkRecoveryCode: (code: string) => Promise<boolean>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -33,8 +36,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                         id: "default",
                         storeName: "Roberto's StockTrack",
                         defaultLowStockThreshold: 10,
-                        updated_at: new Date().toISOString()
+                        updated_at: new Date().toISOString(),
+                        recoveryTotpSecret: generateTotpSecret(),
                     });
+                } else {
+                    // Migrate existing settings that don't have a recovery secret yet
+                    const existing = await db.settings.get("default");
+                    if (existing && !existing.recoveryTotpSecret) {
+                        await db.settings.update("default", {
+                            recoveryTotpSecret: generateTotpSecret(),
+                        });
+                    }
                 }
             } catch (error) {
                 console.error("Error initializing settings:", error);
@@ -79,18 +91,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 throw new Error("Invalid backup file format");
             }
 
+            // Migrate users from old backups that stored plaintext PINs (no pin_salt field)
+            const usersToImport: User[] = await Promise.all(
+                data.users.map(async (u: User) => {
+                    if (!u.pin_salt) {
+                        const salt = generateSalt();
+                        const hash = await hashPin(u.pin, salt);
+                        return { ...u, pin: hash, pin_salt: salt };
+                    }
+                    return u;
+                })
+            );
+
+            // Ensure imported settings have a recovery secret
+            const settingsToImport = (data.settings || []).map((s: AppSettings) => ({
+                ...s,
+                recoveryTotpSecret: s.recoveryTotpSecret || generateTotpSecret(),
+            }));
+
             await db.transaction("rw", db.items, db.transactions, db.users, db.settings, async () => {
-                // Clear existing data
                 await db.items.clear();
                 await db.transactions.clear();
                 await db.users.clear();
                 await db.settings.clear();
 
-                // Import new data
                 await db.items.bulkAdd(data.items);
                 if (data.transactions) await db.transactions.bulkAdd(data.transactions);
-                if (data.users) await db.users.bulkAdd(data.users);
-                if (data.settings) await db.settings.bulkAdd(data.settings);
+                await db.users.bulkAdd(usersToImport);
+                await db.settings.bulkAdd(settingsToImport);
             });
         } catch (error) {
             console.error("Import failed:", error);
@@ -107,21 +135,36 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await db.settings.clear();
             await db.categories.clear();
 
-            await db.users.bulkAdd([
-                { id: "admin_1234", name: "Admin", pin: "1234", role: "ADMIN", created_at: now },
-                { id: "super_8888", name: "Super Admin", pin: "8888", role: "SUPER_ADMIN", created_at: now }
-            ]);
+            // No default users seeded — setup wizard runs on next /auth visit
+            // Generate a NEW recovery secret on reset — developer must re-register authenticator
             await db.settings.add({
                 id: "default",
-                storeName: "Roberto's StockTrack",
+                storeName: settings?.storeName || "StockTrack",
                 defaultLowStockThreshold: 10,
-                updated_at: now
+                updated_at: now,
+                recoveryTotpSecret: generateTotpSecret(),
             });
         });
     };
 
+    const regenerateRecoverySecret = async () => {
+        await db.settings.update("default", {
+            recoveryTotpSecret: generateTotpSecret(),
+            updated_at: new Date().toISOString(),
+        });
+    };
+
+    const checkRecoveryCode = async (code: string): Promise<boolean> => {
+        const s = await db.settings.get("default");
+        if (!s?.recoveryTotpSecret) return false;
+        return verifyTotp(s.recoveryTotpSecret, code);
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, isLoading, updateSettings, exportData, importData, resetDatabase }}>
+        <SettingsContext.Provider value={{
+            settings, isLoading, updateSettings, exportData, importData,
+            resetDatabase, regenerateRecoverySecret, checkRecoveryCode
+        }}>
             {children}
         </SettingsContext.Provider>
     );

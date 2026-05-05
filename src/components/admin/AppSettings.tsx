@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useSettings } from "@/lib/settings-context";
+import { useUser } from "@/lib/user-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings, Save, Download, Upload, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Settings, Save, Download, Upload, Loader2, RefreshCw, AlertTriangle, ShieldAlert, Copy, Check } from "lucide-react";
 import {
     Card,
     CardContent,
@@ -23,15 +24,34 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { totpUri } from "@/lib/crypto";
 
 export function AppSettingsView() {
-    const { settings, updateSettings, exportData, importData, resetDatabase, isLoading } = useSettings();
+    const { settings, updateSettings, exportData, importData, resetDatabase, regenerateRecoverySecret, isLoading } = useSettings();
+    const { currentUser } = useUser();
     const [isSaving, setIsSaving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
+    const [copiedSecret, setCopiedSecret] = useState(false);
+    const [copiedUri, setCopiedUri] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+    const totpSecret = settings?.recoveryTotpSecret;
+    const formattedSecret = totpSecret
+        ? totpSecret.match(/.{1,4}/g)?.join(' ') ?? totpSecret
+        : '';
+    const otpauthUri = totpSecret ? totpUri(totpSecret, settings?.storeName || 'StockTrack') : '';
+
+    const copyToClipboard = async (text: string, setCopied: (v: boolean) => void) => {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     const [formData, setFormData] = useState({
         storeName: settings?.storeName || "",
@@ -216,6 +236,72 @@ export function AppSettingsView() {
                         </div>
                     </CardContent>
                 </Card>
+                {/* Developer Recovery — SUPER_ADMIN only */}
+                {isSuperAdmin && totpSecret && (
+                    <Card className="glass-dark border-amber-500/20">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-amber-400">
+                                <ShieldAlert className="w-5 h-5" />
+                                Developer Recovery
+                            </CardTitle>
+                            <CardDescription>
+                                Scan this secret into Google Authenticator (or any TOTP app). Use the 6-digit code on the login screen if all admin PINs are lost.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-2">
+                                <label className="text-xs font-bold opacity-60 uppercase tracking-wider">Secret Key</label>
+                                <div className="flex gap-2 items-center">
+                                    <code className="flex-1 bg-black/30 border border-amber-500/20 rounded-xl px-4 py-3 text-sm font-mono text-amber-300 tracking-widest select-all">
+                                        {formattedSecret}
+                                    </code>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="shrink-0 rounded-xl hover:bg-amber-500/10"
+                                        onClick={() => copyToClipboard(totpSecret, setCopiedSecret)}
+                                    >
+                                        {copiedSecret ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <label className="text-xs font-bold opacity-60 uppercase tracking-wider">TOTP URI (for QR scanners)</label>
+                                <div className="flex gap-2 items-center">
+                                    <code className="flex-1 bg-black/30 border border-amber-500/20 rounded-xl px-4 py-3 text-xs font-mono text-muted-foreground break-all select-all">
+                                        {otpauthUri}
+                                    </code>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="shrink-0 rounded-xl hover:bg-amber-500/10"
+                                        onClick={() => copyToClipboard(otpauthUri, setCopiedUri)}
+                                    >
+                                        {copiedUri ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Paste this URI into <a href="https://totp.app" target="_blank" rel="noopener" className="underline">totp.app</a> to generate a QR code you can scan.
+                                </p>
+                            </div>
+
+                            <div className="pt-2 border-t border-white/5">
+                                <Button
+                                    variant="outline"
+                                    className="border-amber-500/20 text-amber-400 hover:bg-amber-500/10"
+                                    onClick={() => setShowRegenerateConfirm(true)}
+                                >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Regenerate Secret
+                                </Button>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Regenerating invalidates the current secret — you must re-register in your authenticator app.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             {/* Reset Confirmation Dialog */}
@@ -227,7 +313,7 @@ export function AppSettingsView() {
                             Reset Database?
                         </DialogTitle>
                         <DialogDescription>
-                            This will wipe ALL data including inventory, transactions, and users (except defaults). This action cannot be undone.
+                            This will wipe ALL data including inventory, transactions, and users. A new recovery secret will also be generated — re-register your authenticator after reset. This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -246,6 +332,42 @@ export function AppSettingsView() {
                         }}>
                             {isResetting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
                             Confirm Reset
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Regenerate Recovery Secret Confirmation */}
+            <Dialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+                <DialogContent className="glass-dark border-amber-500/20 rounded-[2rem]" onInteractOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle className="text-amber-400 flex items-center gap-2">
+                            <RefreshCw className="w-5 h-5" />
+                            Regenerate Recovery Secret?
+                        </DialogTitle>
+                        <DialogDescription>
+                            The current secret will be invalidated immediately. You must remove the old entry from your authenticator app and re-add the new secret.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setShowRegenerateConfirm(false)}>Cancel</Button>
+                        <Button
+                            className="bg-amber-500 hover:bg-amber-500/80 text-black"
+                            disabled={isRegenerating}
+                            onClick={async () => {
+                                setIsRegenerating(true);
+                                try {
+                                    await regenerateRecoverySecret();
+                                    setShowRegenerateConfirm(false);
+                                } catch (error) {
+                                    console.error("Regenerate failed:", error);
+                                } finally {
+                                    setIsRegenerating(false);
+                                }
+                            }}
+                        >
+                            {isRegenerating ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                            Regenerate
                         </Button>
                     </DialogFooter>
                 </DialogContent>
