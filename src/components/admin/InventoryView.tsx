@@ -479,7 +479,8 @@ export function InventoryView() {
                             <Input
                                 type="number"
                                 className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.quantity}
+                                value={formData.quantity === 0 ? "" : formData.quantity}
+                                placeholder="0"
                                 onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
                             />
                         </div>
@@ -488,7 +489,8 @@ export function InventoryView() {
                             <Input
                                 type="number"
                                 className="col-span-3 bg-white/5 border-white/10"
-                                value={formData.low_stock_threshold}
+                                value={formData.low_stock_threshold === 0 ? "" : formData.low_stock_threshold}
+                                placeholder="0"
                                 onChange={(e) => setFormData({ ...formData, low_stock_threshold: parseInt(e.target.value) || 0 })}
                             />
                         </div>
