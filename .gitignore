@@ -34,7 +34,7 @@ yarn-error.log*
 .env*
 
 #mcp
-.mcp.json
+mcp.json
 
 # vercel
 .vercel
@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#lint_output
+lint_output.txt
