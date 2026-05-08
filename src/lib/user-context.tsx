@@ -14,7 +14,7 @@ interface UserContextType {
     logout: () => void;
     users: User[];
     addUser: (userData: { id: string; name: string; pin: string; role: UserRole }) => Promise<void>;
-    updateUser: (id: string, updates: { name?: string; pin?: string; role?: UserRole }) => Promise<void>;
+    updateUser: (id: string, updates: { name?: string; pin?: string; role?: UserRole; allowedCategories?: string[] | null }) => Promise<void>;
     deleteUser: (id: string) => Promise<void>;
 }
 
@@ -85,7 +85,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
-    const updateUser = async (id: string, updates: { name?: string; pin?: string; role?: UserRole }) => {
+    const updateUser = async (id: string, updates: { name?: string; pin?: string; role?: UserRole; allowedCategories?: string[] | null }) => {
         const dbUpdates: Partial<User> = {};
         if (updates.name !== undefined) dbUpdates.name = updates.name;
         if (updates.role !== undefined) dbUpdates.role = updates.role;
@@ -94,6 +94,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             const hash = await hashPin(updates.pin, salt);
             dbUpdates.pin = hash;
             dbUpdates.pin_salt = salt;
+        }
+        if ('allowedCategories' in updates) {
+            dbUpdates.allowedCategories = updates.allowedCategories ?? undefined;
         }
         await db.users.update(id, dbUpdates);
     };

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { db, InventoryItem, Transaction, Category } from "./db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useUser } from "./user-context";
 
 interface InventoryContextType {
     items: InventoryItem[];
@@ -20,10 +21,36 @@ interface InventoryContextType {
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
-    // useLiveQuery automatically updates the component when the database changes
-    const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+    const { currentUser } = useUser();
+
+    const allItems = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+
+    const items = React.useMemo(() => {
+        if (
+            currentUser?.role === 'STANDARD' &&
+            currentUser.allowedCategories !== undefined &&
+            currentUser.allowedCategories !== null
+        ) {
+            const allowed = new Set(currentUser.allowedCategories);
+            return allItems.filter(item => allowed.has(item.category));
+        }
+        return allItems;
+    }, [allItems, currentUser]);
+
     const categories = useLiveQuery(() => db.categories.orderBy('name').toArray(), []) || [];
-    const transactions = useLiveQuery(() => db.transactions.orderBy('timestamp').reverse().limit(100).toArray(), []) || [];
+    const allTransactions = useLiveQuery(() => db.transactions.orderBy('timestamp').reverse().limit(100).toArray(), []) || [];
+
+    const transactions = React.useMemo(() => {
+        if (
+            currentUser?.role === 'STANDARD' &&
+            currentUser.allowedCategories !== undefined &&
+            currentUser.allowedCategories !== null
+        ) {
+            const allowedItemIds = new Set(items.map(i => i.id));
+            return allTransactions.filter(t => allowedItemIds.has(t.item_id));
+        }
+        return allTransactions;
+    }, [allTransactions, items, currentUser]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
