@@ -8,6 +8,7 @@ export interface User {
     pin_salt: string; // random salt (base64)
     role: 'STANDARD' | 'ADMIN' | 'SUPER_ADMIN';
     created_at: string;
+    allowedCategories?: string[]; // if set, STANDARD users can only see items in these categories
 }
 
 export interface InventoryItem {

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/user-context";
+import { useInventory } from "@/lib/inventory-context";
 import { User } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import {
     Table,
     TableBody,
@@ -33,6 +35,7 @@ import { Plus, Edit2, Trash2, Loader2, AlertTriangle, UserCog } from "lucide-rea
 
 export function UserManagement() {
     const { users, addUser, updateUser, deleteUser, currentUser } = useUser();
+    const { categories } = useInventory();
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -41,8 +44,19 @@ export function UserManagement() {
     const [formData, setFormData] = useState({
         name: "",
         pin: "",
-        role: "STANDARD" as "STANDARD" | "ADMIN" | "SUPER_ADMIN"
+        role: "STANDARD" as "STANDARD" | "ADMIN" | "SUPER_ADMIN",
+        allowedCategories: null as string[] | null,
     });
+
+    const toggleCategory = (categoryName: string) => {
+        setFormData(prev => {
+            const current = prev.allowedCategories ?? [];
+            const next = current.includes(categoryName)
+                ? current.filter(c => c !== categoryName)
+                : [...current, categoryName];
+            return { ...prev, allowedCategories: next };
+        });
+    };
 
     const handleSave = async () => {
         if (!formData.name) return;
@@ -50,11 +64,12 @@ export function UserManagement() {
         setIsSubmitting(true);
         try {
             if (editingUser) {
-                const updates: { name: string; role: typeof formData.role; pin?: string } = {
+                const updates: { name: string; role: typeof formData.role; pin?: string; allowedCategories?: string[] | null } = {
                     name: formData.name,
                     role: formData.role,
+                    allowedCategories: formData.role === 'STANDARD' ? formData.allowedCategories : null,
                 };
-                if (formData.pin) updates.pin = formData.pin;  // only update PIN if entered
+                if (formData.pin) updates.pin = formData.pin;
                 await updateUser(editingUser.id, updates);
             } else {
                 await addUser({
@@ -66,7 +81,7 @@ export function UserManagement() {
             }
             setIsAddOpen(false);
             setEditingUser(null);
-            setFormData({ name: "", pin: "", role: "STANDARD" });
+            setFormData({ name: "", pin: "", role: "STANDARD", allowedCategories: null });
         } catch (error) {
             console.error("Save failed:", error);
         } finally {
@@ -92,8 +107,9 @@ export function UserManagement() {
         setEditingUser(user);
         setFormData({
             name: user.name,
-            pin: "",  // blank — only update PIN if user enters a new one
-            role: user.role
+            pin: "",
+            role: user.role,
+            allowedCategories: user.allowedCategories ?? null,
         });
         setIsAddOpen(true);
     };
@@ -109,7 +125,7 @@ export function UserManagement() {
                     className="rounded-xl bg-primary hover:bg-primary/80"
                     onClick={() => {
                         setEditingUser(null);
-                        setFormData({ name: "", pin: "", role: "STANDARD" });
+                        setFormData({ name: "", pin: "", role: "STANDARD", allowedCategories: null });
                         setIsAddOpen(true);
                     }}
                 >
@@ -210,7 +226,7 @@ export function UserManagement() {
                             <label className="text-sm font-bold opacity-70">Role</label>
                             <Select
                                 value={formData.role}
-                                onValueChange={(value: "STANDARD" | "ADMIN" | "SUPER_ADMIN") => setFormData({ ...formData, role: value })}
+                                onValueChange={(value: "STANDARD" | "ADMIN" | "SUPER_ADMIN") => setFormData({ ...formData, role: value, allowedCategories: null })}
                             >
                                 <SelectTrigger className="bg-white/5 border-white/10">
                                     <SelectValue />
@@ -222,11 +238,55 @@ export function UserManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {formData.role === 'STANDARD' && editingUser && (
+                            <div className="grid gap-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold opacity-70">Category Access</label>
+                                    <span className="text-xs text-muted-foreground">
+                                        {formData.allowedCategories === null
+                                            ? "All categories"
+                                            : `${formData.allowedCategories.length} selected`}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, allowedCategories: prev.allowedCategories !== null ? null : [] }))}
+                                    className="flex items-center gap-2 mb-1 w-full text-left"
+                                >
+                                    <span className={`flex-shrink-0 w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors ${formData.allowedCategories !== null ? 'bg-primary border-primary' : 'bg-transparent border-white/40'}`}>
+                                    </span>
+                                    <span className="text-sm">Restrict to specific categories</span>
+                                </button>
+                                {formData.allowedCategories !== null && (
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex flex-col gap-2 max-h-40 overflow-y-auto">
+                                        {categories.length === 0 && (
+                                            <p className="text-xs text-muted-foreground">No categories exist yet.</p>
+                                        )}
+                                        {categories.map(cat => {
+                                            const checked = formData.allowedCategories?.includes(cat.name) ?? false;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={cat.id}
+                                                    onClick={() => toggleCategory(cat.name)}
+                                                    className="flex items-center gap-2 w-full text-left"
+                                                >
+                                                    <span className={`flex-shrink-0 w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors ${checked ? 'bg-primary border-primary' : 'bg-transparent border-white/40'}`}>
+                                                    </span>
+                                                    <span className="text-sm">{cat.name}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Cancel</Button>
-                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/80" disabled={isSubmitting || !formData.name || !formData.pin}>
+                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/80" disabled={isSubmitting || !formData.name || (!editingUser && !formData.pin)}>
                             {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : (editingUser ? "Update User" : "Create User")}
                         </Button>
                     </DialogFooter>
