@@ -1,3 +1,8 @@
+import { pbkdf2 } from '@noble/hashes/pbkdf2.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { hmac } from '@noble/hashes/hmac.js';
+import { sha1 } from '@noble/hashes/legacy.js';
+
 export function generateSalt(): string {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
@@ -7,19 +12,8 @@ export function generateSalt(): string {
 export async function hashPin(pin: string, saltBase64: string): Promise<string> {
     const encoder = new TextEncoder();
     const saltBytes = Uint8Array.from(atob(saltBase64), c => c.charCodeAt(0));
-    const keyMaterial = await crypto.subtle.importKey(
-        'raw',
-        encoder.encode(pin),
-        'PBKDF2',
-        false,
-        ['deriveBits']
-    );
-    const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
-        keyMaterial,
-        256
-    );
-    return btoa(String.fromCharCode(...new Uint8Array(bits)));
+    const hash = pbkdf2(sha256, encoder.encode(pin), saltBytes, { c: 100000, dkLen: 32 });
+    return btoa(String.fromCharCode(...hash));
 }
 
 // --- TOTP (RFC 6238) — developer recovery ---
@@ -51,14 +45,11 @@ function base32Decode(str: string): Uint8Array {
 }
 
 async function hotp(secret: string, counter: number): Promise<string> {
-    const key = base32Decode(secret).buffer as ArrayBuffer;
+    const key = base32Decode(secret);
     const msg = new Uint8Array(8);
     let c = counter;
     for (let i = 7; i >= 0; i--) { msg[i] = c & 0xff; c = Math.floor(c / 256); }
-    const cryptoKey = await crypto.subtle.importKey(
-        'raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
-    );
-    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, msg));
+    const sig = hmac(sha1, key, msg);
     const offset = sig[sig.length - 1] & 0xf;
     const code = ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) |
                  (sig[offset + 2] << 8) | sig[offset + 3];

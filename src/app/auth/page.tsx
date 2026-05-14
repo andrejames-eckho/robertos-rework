@@ -81,7 +81,7 @@ export default function AuthPage() {
                 return;
             }
             await addUser({
-                id: crypto.randomUUID(),
+                id: (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`),
                 name: setupName.trim(),
                 pin: setupPin,
                 role: 'SUPER_ADMIN'
